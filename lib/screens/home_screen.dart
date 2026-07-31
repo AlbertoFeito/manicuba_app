@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../config/constants.dart';
+import 'clientes/clientes_screen.dart';
+import 'clientes/cliente_form_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -11,6 +13,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  // Cambia para forzar la recarga de la pestaña de Clientes tras un alta.
+  int _clientesReload = 0;
 
   final List<String> _titles = [
     'Inicio',
@@ -40,8 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildHomeTab(),
           // Agenda (placeholder)
           _buildPlaceholder('Agenda'),
-          // Clientes (placeholder)
-          _buildPlaceholder('Clientes'),
+          // Clientes
+          ClientesScreen(key: ValueKey(_clientesReload)),
           // Finanzas (placeholder)
           _buildPlaceholder('Finanzas'),
           // Redes Sociales (placeholder)
@@ -178,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildActionButton(
                   icon: Icons.add_box,
                   label: 'Nuevo Cliente',
-                  onTap: () => _showMessage('Nuevo cliente'),
+                  onTap: _nuevoCliente,
                 ),
                 _buildActionButton(
                   icon: Icons.add_shopping_cart,
@@ -314,6 +319,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _nuevoCliente() async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const ClienteFormScreen(),
+      ),
+    );
+    if (guardado == true && mounted) {
+      // Cambia a la pestaña de Clientes (recargándola) para ver el registro.
+      setState(() {
+        _selectedIndex = 2;
+        _clientesReload++;
+      });
+    }
   }
 
   void _showMessage(String message) {

@@ -12,7 +12,7 @@ void main() {
   testWidgets('La app arranca en la pantalla de inicio',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     // El saludo de bienvenida está presente.
     expect(find.text('¡Bienvenida a ManiCuba! 💅'), findsOneWidget);
