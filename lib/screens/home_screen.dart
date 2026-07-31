@@ -3,6 +3,7 @@ import '../config/theme.dart';
 import '../config/constants.dart';
 import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
+import 'servicios/servicios_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -37,6 +38,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         elevation: 2,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Más',
+            onSelected: (value) {
+              if (value == 'servicios') {
+                _abrirServicios();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'servicios',
+                child: ListTile(
+                  leading: Icon(Icons.spa),
+                  title: Text('Servicios'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -317,6 +339,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _abrirServicios() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const ServiciosScreen(),
       ),
     );
   }
