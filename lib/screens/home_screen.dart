@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../config/constants.dart';
+import 'agenda/agenda_screen.dart';
+import 'agenda/cita_form_screen.dart';
 import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
 import 'servicios/servicios_screen.dart';
@@ -17,6 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Cambia para forzar la recarga de la pestaña de Clientes tras un alta.
   int _clientesReload = 0;
+
+  // Cambia para forzar la recarga de la pestaña de Agenda tras un alta.
+  int _agendaReload = 0;
 
   final List<String> _titles = [
     'Inicio',
@@ -65,8 +70,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Pantalla de inicio
           _buildHomeTab(),
-          // Agenda (placeholder)
-          _buildPlaceholder('Agenda'),
+          // Agenda
+          AgendaScreen(key: ValueKey(_agendaReload)),
           // Clientes
           ClientesScreen(key: ValueKey(_clientesReload)),
           // Finanzas (placeholder)
@@ -200,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildActionButton(
                   icon: Icons.add_circle,
                   label: 'Nueva Cita',
-                  onTap: () => _showMessage('Nueva cita'),
+                  onTap: _nuevaCita,
                 ),
                 _buildActionButton(
                   icon: Icons.add_box,
@@ -341,6 +346,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _nuevaCita() async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const CitaFormScreen(),
+      ),
+    );
+    if (guardado == true && mounted) {
+      // Cambia a la pestaña de Agenda (recargándola) para ver la cita.
+      setState(() {
+        _selectedIndex = 1;
+        _agendaReload++;
+      });
+    }
   }
 
   Future<void> _abrirServicios() async {
