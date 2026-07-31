@@ -5,6 +5,8 @@ import 'agenda/agenda_screen.dart';
 import 'agenda/cita_form_screen.dart';
 import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
+import 'finanzas/finanzas_screen.dart';
+import 'finanzas/gasto_form_screen.dart';
 import 'servicios/servicios_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,6 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Cambia para forzar la recarga de la pestaña de Agenda tras un alta.
   int _agendaReload = 0;
+
+  // Cambia para forzar la recarga de la pestaña de Finanzas tras un registro.
+  int _finanzasReload = 0;
 
   final List<String> _titles = [
     'Inicio',
@@ -74,8 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
           AgendaScreen(key: ValueKey(_agendaReload)),
           // Clientes
           ClientesScreen(key: ValueKey(_clientesReload)),
-          // Finanzas (placeholder)
-          _buildPlaceholder('Finanzas'),
+          // Finanzas
+          FinanzasScreen(key: ValueKey(_finanzasReload)),
           // Redes Sociales (placeholder)
           _buildPlaceholder('Redes Sociales'),
         ],
@@ -215,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildActionButton(
                   icon: Icons.add_shopping_cart,
                   label: 'Registrar Gasto',
-                  onTap: () => _showMessage('Registrar gasto'),
+                  onTap: _registrarGasto,
                 ),
                 _buildActionButton(
                   icon: Icons.add_a_photo,
@@ -359,6 +364,21 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _selectedIndex = 1;
         _agendaReload++;
+      });
+    }
+  }
+
+  Future<void> _registrarGasto() async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const GastoFormScreen(),
+      ),
+    );
+    if (guardado == true && mounted) {
+      // Cambia a la pestaña de Finanzas (recargándola) para ver el registro.
+      setState(() {
+        _selectedIndex = 3;
+        _finanzasReload++;
       });
     }
   }
