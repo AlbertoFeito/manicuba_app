@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Cámara para tomar fotos de trabajo (galería usa el selector del
+         sistema y no requiere permisos de almacenamiento). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+
     <application
-        android:label="manicuba_app"
+        android:label="ManiCuba"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

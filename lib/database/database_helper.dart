@@ -428,6 +428,22 @@ class DatabaseHelper {
     return await db.delete('posts_redes', where: 'id = ?', whereArgs: [id]);
   }
 
+  // FOTOS DE TRABAJO
+  Future<int> insertFotoTrabajo(Map<String, dynamic> foto) async {
+    final db = await database;
+    return await db.insert('fotos_trabajo', foto);
+  }
+
+  Future<List<Map<String, dynamic>>> getAllFotosTrabajo() async {
+    final db = await database;
+    return await db.query('fotos_trabajo', orderBy: 'fecha DESC');
+  }
+
+  Future<int> deleteFotoTrabajo(int id) async {
+    final db = await database;
+    return await db.delete('fotos_trabajo', where: 'id = ?', whereArgs: [id]);
+  }
+
   // UTILIDADES
   Future<void> close() async {
     final db = await database;

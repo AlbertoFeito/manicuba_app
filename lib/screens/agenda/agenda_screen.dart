@@ -200,6 +200,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
       lastDay: DateTime.utc(2100, 12, 31),
       focusedDay: _focusedDay,
       calendarFormat: _formato,
+      locale: 'es_ES',
       startingDayOfWeek: StartingDayOfWeek.monday,
       availableCalendarFormats: const {
         CalendarFormat.month: 'Mes',

@@ -7,6 +7,7 @@ import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
 import 'finanzas/finanzas_screen.dart';
 import 'finanzas/gasto_form_screen.dart';
+import 'galeria/galeria_screen.dart';
 import 'inventario/inventario_screen.dart';
 import 'redes_sociales/redes_screen.dart';
 import 'redes_sociales/post_form_screen.dart';
@@ -98,6 +99,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _abrirServicios();
               } else if (value == 'inventario') {
                 _abrirInventario();
+              } else if (value == 'galeria') {
+                _abrirGaleria();
               }
             },
             itemBuilder: (_) => const [
@@ -114,6 +117,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListTile(
                   leading: Icon(Icons.inventory_2),
                   title: Text('Inventario'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'galeria',
+                child: ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Galería de trabajos'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -466,6 +477,14 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => const InventarioScreen(),
+      ),
+    );
+  }
+
+  Future<void> _abrirGaleria() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const GaleriaScreen(),
       ),
     );
   }
