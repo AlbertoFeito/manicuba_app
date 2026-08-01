@@ -41,8 +41,10 @@ class _AgendaScreenState extends State<AgendaScreen> {
     }
     _citasPorDia.clear();
     for (final cita in citas) {
-      // Las citas completadas salen del calendario y pasan al Historial.
-      if (cita.estado == EstadoCita.completada) {
+      // Las citas completadas y canceladas salen del calendario y pasan
+      // al Historial; el calendario solo muestra las activas.
+      if (cita.estado == EstadoCita.completada ||
+          cita.estado == EstadoCita.cancelada) {
         continue;
       }
       final dia = _norm(cita.fechaHora);
