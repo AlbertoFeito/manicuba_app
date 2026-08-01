@@ -49,16 +49,18 @@ class _HistorialScreenState extends State<HistorialScreen> {
     });
   }
 
-  Future<void> _reabrir(Cita cita) async {
+  Future<void> _deshacer(Cita cita) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reabrir cita'),
+        title: const Text('Deshacer'),
         content: Text(
           cita.estado == EstadoCita.completada
-              ? 'La cita volverá al calendario como Pendiente y se quitará su '
-                  'ingreso automático de Finanzas. ¿Continuar?'
-              : 'La cita volverá al calendario como Pendiente. ¿Continuar?',
+              ? 'Se deshará el estado: la cita volverá al calendario como '
+                  'Pendiente y se quitará su ingreso de Finanzas. Úsalo si la '
+                  'marcaste como completada por error. ¿Continuar?'
+              : 'Se deshará el estado: la cita volverá al calendario como '
+                  'Pendiente. Úsalo si la cancelaste por error. ¿Continuar?',
         ),
         actions: [
           TextButton(
@@ -67,7 +69,7 @@ class _HistorialScreenState extends State<HistorialScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Reabrir'),
+            child: const Text('Deshacer'),
           ),
         ],
       ),
@@ -78,7 +80,7 @@ class _HistorialScreenState extends State<HistorialScreen> {
     await _citaService.cambiarEstado(cita.id!, EstadoCita.pendiente);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cita reabierta y devuelta a la agenda')),
+        const SnackBar(content: Text('Cita devuelta a la agenda como Pendiente')),
       );
     }
     await _cargar();
@@ -201,18 +203,18 @@ class _HistorialScreenState extends State<HistorialScreen> {
               ),
             PopupMenuButton<String>(
               onSelected: (value) {
-                if (value == 'reabrir') {
-                  _reabrir(cita);
+                if (value == 'deshacer') {
+                  _deshacer(cita);
                 } else if (value == 'eliminar') {
                   _eliminar(cita);
                 }
               },
               itemBuilder: (_) => [
                 const PopupMenuItem(
-                  value: 'reabrir',
+                  value: 'deshacer',
                   child: ListTile(
                     leading: Icon(Icons.undo),
-                    title: Text('Reabrir'),
+                    title: Text('Deshacer'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),

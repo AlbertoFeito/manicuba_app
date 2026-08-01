@@ -35,7 +35,7 @@ class Ayudas {
       'Toca una cita para cambiar su estado (Pendiente, Confirmada, Completada, Cancelada), editarla o eliminarla.',
       'Al marcar una cita como COMPLETADA, su monto se registra automáticamente como ingreso en Finanzas.',
       'Las citas COMPLETADAS y CANCELADAS salen del calendario y pasan al Historial; el calendario solo muestra las activas (pendientes y confirmadas).',
-      'Una cita completada ya no se puede eliminar (protege tus cuentas); si fue un error, usa "Reabrir" desde el Historial.',
+      'Una cita completada ya no se puede eliminar (protege tus cuentas); si la marcaste por error, usa "Deshacer" desde el Historial.',
       'Abre el Historial desde el menú ⋮ (arriba a la derecha).',
     ],
   );
@@ -46,7 +46,7 @@ class Ayudas {
     puntos: [
       'Aquí quedan las citas completadas (verde) y las canceladas (rojo), de la más reciente a la más antigua.',
       'Las completadas no se pueden eliminar (protegen el registro de ingresos); las canceladas sí se pueden eliminar.',
-      'Usa "Reabrir" para devolver una cita al calendario como Pendiente; si estaba completada, también se quita su ingreso automático.',
+      '"Deshacer" corrige un error: si marcaste una cita como completada o cancelada sin querer, la devuelve al calendario como Pendiente. Si estaba completada, también le quita el ingreso.',
       'El historial de cada cliente también aparece en su ficha (pestaña Clientes).',
     ],
   );
