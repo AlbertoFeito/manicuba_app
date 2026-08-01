@@ -5,10 +5,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../config/ayuda_content.dart';
 import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../models/foto_trabajo.dart';
 import '../../services/foto_service.dart';
+import '../../widgets/ayuda_button.dart';
 
 /// Galería de fotos de trabajo. Permite añadir fotos desde la cámara o la
 /// galería del teléfono, verlas, compartirlas y eliminarlas.
@@ -181,7 +183,10 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Galería de trabajos')),
+      appBar: AppBar(
+        title: const Text('Galería de trabajos'),
+        actions: const [AyudaButton(info: Ayudas.galeria)],
+      ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _buildGaleria(),

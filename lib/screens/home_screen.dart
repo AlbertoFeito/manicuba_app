@@ -14,6 +14,8 @@ import 'redes_sociales/post_form_screen.dart';
 import 'servicios/servicios_screen.dart';
 import '../services/cita_service.dart';
 import '../services/finanzas_service.dart';
+import '../config/ayuda_content.dart';
+import '../widgets/ayuda_button.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -56,6 +58,22 @@ class _HomeScreenState extends State<HomeScreen> {
     'Redes Sociales',
   ];
 
+  AyudaInfo get _ayudaActual {
+    switch (_selectedIndex) {
+      case 1:
+        return Ayudas.agenda;
+      case 2:
+        return Ayudas.clientes;
+      case 3:
+        return Ayudas.finanzas;
+      case 4:
+        return Ayudas.redes;
+      case 0:
+      default:
+        return Ayudas.inicio;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -91,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         elevation: 2,
         actions: [
+          AyudaButton(info: _ayudaActual),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             tooltip: 'Más',

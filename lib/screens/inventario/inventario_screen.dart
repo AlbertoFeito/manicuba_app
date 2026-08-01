@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../config/ayuda_content.dart';
 import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../models/producto.dart';
 import '../../services/inventario_service.dart';
+import '../../widgets/ayuda_button.dart';
 import 'producto_form_screen.dart';
 
 /// Inventario de productos: stock, alertas de bajo stock y valor total.
@@ -102,7 +104,10 @@ class _InventarioScreenState extends State<InventarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario')),
+      appBar: AppBar(
+        title: const Text('Inventario'),
+        actions: const [AyudaButton(info: Ayudas.inventario)],
+      ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : Column(

@@ -1,15 +1,62 @@
+import '../config/constants.dart';
 import '../database/database_helper.dart';
 import '../models/cita.dart';
+import '../models/ingreso.dart';
+import 'finanzas_service.dart';
 
 class CitaService {
   final DatabaseHelper _db = DatabaseHelper();
+  final FinanzasService _finanzas = FinanzasService();
 
   // Crear cita
   Future<int> crearCita(Cita cita) async {
     final citaConFecha = cita.copyWith(
       fechaCreacion: cita.fechaCreacion ?? DateTime.now(),
     );
-    return await _db.insertCita(citaConFecha.toMap());
+    final id = await _db.insertCita(citaConFecha.toMap());
+    await sincronizarIngreso(citaConFecha.copyWith(id: id));
+    return id;
+  }
+
+  /// Mantiene el ingreso en sincronía con el estado de la cita:
+  /// - Si la cita queda *completada* y tiene monto, registra (o actualiza) un
+  ///   ingreso enlazado a la cita.
+  /// - Si la cita deja de estar completada, elimina el ingreso asociado.
+  /// Es idempotente: no crea ingresos duplicados para la misma cita.
+  Future<void> sincronizarIngreso(Cita cita) async {
+    if (cita.id == null) {
+      return;
+    }
+    final existentes = await _finanzas.obtenerIngresosPorCita(cita.id!);
+    final debeTenerIngreso =
+        cita.estado == EstadoCita.completada && (cita.monto ?? 0) > 0;
+
+    if (!debeTenerIngreso) {
+      if (existentes.isNotEmpty) {
+        await _finanzas.eliminarIngresosPorCita(cita.id!);
+      }
+      return;
+    }
+
+    // Debe existir un ingreso que refleje el monto y la fecha actuales.
+    final yaCorrecto = existentes.length == 1 &&
+        existentes.first.monto == cita.monto &&
+        existentes.first.fecha == cita.fechaHora;
+    if (yaCorrecto) {
+      return;
+    }
+    if (existentes.isNotEmpty) {
+      await _finanzas.eliminarIngresosPorCita(cita.id!);
+    }
+    await _finanzas.registrarIngreso(
+      Ingreso(
+        citaId: cita.id,
+        monto: cita.monto!,
+        metodo: AppConstants.metodosPago.first,
+        fecha: cita.fechaHora,
+        notas: 'Generado automáticamente por cita completada',
+      ),
+    );
   }
 
   // Obtener todas las citas
@@ -48,11 +95,14 @@ class CitaService {
 
   // Actualizar cita
   Future<int> actualizar(Cita cita) async {
-    return await _db.updateCita(cita.toMap());
+    final resultado = await _db.updateCita(cita.toMap());
+    await sincronizarIngreso(cita);
+    return resultado;
   }
 
-  // Eliminar cita
+  // Eliminar cita (elimina también el ingreso asociado, si lo hubiera)
   Future<int> eliminar(int id) async {
+    await _finanzas.eliminarIngresosPorCita(id);
     return await _db.deleteCita(id);
   }
 

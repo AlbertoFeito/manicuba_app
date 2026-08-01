@@ -345,6 +345,29 @@ class DatabaseHelper {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getIngresosByCita(int citaId) async {
+    final db = await database;
+    return await db.query(
+      'ingresos',
+      where: 'cita_id = ?',
+      whereArgs: [citaId],
+    );
+  }
+
+  Future<int> deleteIngreso(int id) async {
+    final db = await database;
+    return await db.delete('ingresos', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> deleteIngresosByCita(int citaId) async {
+    final db = await database;
+    return await db.delete(
+      'ingresos',
+      where: 'cita_id = ?',
+      whereArgs: [citaId],
+    );
+  }
+
   // GASTOS
   Future<int> insertGasto(Map<String, dynamic> gasto) async {
     final db = await database;

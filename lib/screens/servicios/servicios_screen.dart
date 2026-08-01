@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../config/ayuda_content.dart';
 import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../models/servicio.dart';
 import '../../services/servicio_service.dart';
+import '../../widgets/ayuda_button.dart';
 import 'servicio_form_screen.dart';
 
 /// Catálogo de servicios ofrecidos (precio y duración).
@@ -86,7 +88,10 @@ class _ServiciosScreenState extends State<ServiciosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Servicios')),
+      appBar: AppBar(
+        title: const Text('Servicios'),
+        actions: const [AyudaButton(info: Ayudas.servicios)],
+      ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),

@@ -21,6 +21,15 @@ class FinanzasService {
     return mapList.map((map) => Ingreso.fromMap(map)).toList();
   }
 
+  Future<List<Ingreso>> obtenerIngresosPorCita(int citaId) async {
+    final mapList = await _db.getIngresosByCita(citaId);
+    return mapList.map((map) => Ingreso.fromMap(map)).toList();
+  }
+
+  Future<int> eliminarIngresosPorCita(int citaId) async {
+    return _db.deleteIngresosByCita(citaId);
+  }
+
   // ===== GASTOS =====
 
   Future<int> registrarGasto(Gasto gasto) async {
