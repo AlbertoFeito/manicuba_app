@@ -388,6 +388,11 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> deleteProducto(int id) async {
+    final db = await database;
+    return await db.delete('productos', where: 'id = ?', whereArgs: [id]);
+  }
+
   // POSTS REDES
   Future<int> insertPostRedes(Map<String, dynamic> post) async {
     final db = await database;
@@ -416,6 +421,11 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [post['id']],
     );
+  }
+
+  Future<int> deletePostRedes(int id) async {
+    final db = await database;
+    return await db.delete('posts_redes', where: 'id = ?', whereArgs: [id]);
   }
 
   // UTILIDADES

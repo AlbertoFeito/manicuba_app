@@ -35,6 +35,11 @@ class InventarioService {
     return await _db.updateProducto(producto.toMap());
   }
 
+  // Eliminar producto
+  Future<int> eliminar(int id) async {
+    return await _db.deleteProducto(id);
+  }
+
   // Aumentar stock
   Future<int> aumentarStock(int id, int cantidad) async {
     final todos = await obtenerTodos();

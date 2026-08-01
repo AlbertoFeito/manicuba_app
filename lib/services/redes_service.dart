@@ -38,6 +38,11 @@ class RedesService {
     return await _db.updatePostRedes(post.toMap());
   }
 
+  // Eliminar post
+  Future<int> eliminar(int id) async {
+    return _db.deletePostRedes(id);
+  }
+
   // Marcar como publicado
   Future<int> marcarPublicado(int id) async {
     final posts = await obtenerTodos();

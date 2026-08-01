@@ -7,7 +7,13 @@ import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
 import 'finanzas/finanzas_screen.dart';
 import 'finanzas/gasto_form_screen.dart';
+import 'inventario/inventario_screen.dart';
+import 'redes_sociales/redes_screen.dart';
+import 'redes_sociales/post_form_screen.dart';
 import 'servicios/servicios_screen.dart';
+import '../services/cita_service.dart';
+import '../services/finanzas_service.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -19,6 +25,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  final _citaService = CitaService();
+  final _finanzasService = FinanzasService();
+  final _formatoMoneda = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
+
+  // Resumen del día (datos reales).
+  int _citasHoy = 0;
+  double _ingresosHoy = 0;
+  double _gastosHoy = 0;
+  double _balanceHoy = 0;
+
   // Cambia para forzar la recarga de la pestaña de Clientes tras un alta.
   int _clientesReload = 0;
 
@@ -28,6 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Cambia para forzar la recarga de la pestaña de Finanzas tras un registro.
   int _finanzasReload = 0;
 
+  // Cambia para forzar la recarga de la pestaña de Redes tras un alta.
+  int _redesReload = 0;
+
   final List<String> _titles = [
     'Inicio',
     'Agenda',
@@ -35,6 +54,28 @@ class _HomeScreenState extends State<HomeScreen> {
     'Finanzas',
     'Redes Sociales',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarResumen();
+  }
+
+  Future<void> _cargarResumen() async {
+    final citas = await _citaService.totalHoy();
+    final ingresos = await _finanzasService.ingresoHoy();
+    final gastos = await _finanzasService.gastoHoy();
+    final balance = await _finanzasService.balanceHoy();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _citasHoy = citas;
+      _ingresosHoy = ingresos;
+      _gastosHoy = gastos;
+      _balanceHoy = balance;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onSelected: (value) {
               if (value == 'servicios') {
                 _abrirServicios();
+              } else if (value == 'inventario') {
+                _abrirInventario();
               }
             },
             itemBuilder: (_) => const [
@@ -63,6 +106,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListTile(
                   leading: Icon(Icons.spa),
                   title: Text('Servicios'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'inventario',
+                child: ListTile(
+                  leading: Icon(Icons.inventory_2),
+                  title: Text('Inventario'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -81,8 +132,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ClientesScreen(key: ValueKey(_clientesReload)),
           // Finanzas
           FinanzasScreen(key: ValueKey(_finanzasReload)),
-          // Redes Sociales (placeholder)
-          _buildPlaceholder('Redes Sociales'),
+          // Redes Sociales
+          RedesScreen(key: ValueKey(_redesReload)),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -113,6 +164,9 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _selectedIndex = index;
           });
+          if (index == 0) {
+            _cargarResumen();
+          }
         },
       ),
     );
@@ -151,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _buildResumenCard(
                     title: 'Citas',
-                    value: '0',
+                    value: '$_citasHoy',
                     icon: Icons.calendar_today,
                     color: Colors.blue,
                   ),
@@ -160,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _buildResumenCard(
                     title: 'Ingresos',
-                    value: '\$0.00',
+                    value: _formatoMoneda.format(_ingresosHoy),
                     icon: Icons.attach_money,
                     color: Colors.green,
                   ),
@@ -174,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _buildResumenCard(
                     title: 'Gastos',
-                    value: '\$0.00',
+                    value: _formatoMoneda.format(_gastosHoy),
                     icon: Icons.shopping_cart,
                     color: Colors.orange,
                   ),
@@ -183,9 +237,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _buildResumenCard(
                     title: 'Balance',
-                    value: '\$0.00',
+                    value: _formatoMoneda.format(_balanceHoy),
                     icon: Icons.trending_up,
-                    color: AppTheme.successColor,
+                    color: _balanceHoy >= 0
+                        ? AppTheme.successColor
+                        : AppTheme.errorColor,
                   ),
                 ),
               ],
@@ -225,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildActionButton(
                   icon: Icons.add_a_photo,
                   label: 'Post Redes',
-                  onTap: () => _showMessage('Crear post'),
+                  onTap: _nuevoPost,
                 ),
               ],
             ),
@@ -387,6 +443,29 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => const ServiciosScreen(),
+      ),
+    );
+  }
+
+  Future<void> _nuevoPost() async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const PostFormScreen(),
+      ),
+    );
+    if (guardado == true && mounted) {
+      // Cambia a la pestaña de Redes (recargándola) para ver el post.
+      setState(() {
+        _selectedIndex = 4;
+        _redesReload++;
+      });
+    }
+  }
+
+  Future<void> _abrirInventario() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const InventarioScreen(),
       ),
     );
   }
