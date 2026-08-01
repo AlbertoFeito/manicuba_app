@@ -41,6 +41,10 @@ class _AgendaScreenState extends State<AgendaScreen> {
     }
     _citasPorDia.clear();
     for (final cita in citas) {
+      // Las citas completadas salen del calendario y pasan al Historial.
+      if (cita.estado == EstadoCita.completada) {
+        continue;
+      }
       final dia = _norm(cita.fechaHora);
       _citasPorDia.putIfAbsent(dia, () => []).add(cita);
     }
@@ -115,15 +119,18 @@ class _AgendaScreenState extends State<AgendaScreen> {
                   _editarCita(cita);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline,
-                    color: AppTheme.errorColor),
-                title: const Text('Eliminar cita'),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _eliminarCita(cita);
-                },
-              ),
+              // Las citas completadas no se pueden eliminar (protegen el
+              // registro contable); solo se pueden reabrir desde el Historial.
+              if (cita.estado != EstadoCita.completada)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline,
+                      color: AppTheme.errorColor),
+                  title: const Text('Eliminar cita'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _eliminarCita(cita);
+                  },
+                ),
             ],
           ),
         );

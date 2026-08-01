@@ -3,6 +3,7 @@ import '../config/theme.dart';
 import '../config/constants.dart';
 import 'agenda/agenda_screen.dart';
 import 'agenda/cita_form_screen.dart';
+import 'agenda/historial_screen.dart';
 import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
 import 'finanzas/finanzas_screen.dart';
@@ -120,9 +121,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 _abrirInventario();
               } else if (value == 'galeria') {
                 _abrirGaleria();
+              } else if (value == 'historial') {
+                _abrirHistorial();
               }
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'historial',
+                child: ListTile(
+                  leading: Icon(Icons.history),
+                  title: Text('Historial de citas'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               PopupMenuItem(
                 value: 'servicios',
                 child: ListTile(
@@ -506,6 +517,18 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => const GaleriaScreen(),
       ),
     );
+  }
+
+  Future<void> _abrirHistorial() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const HistorialScreen(),
+      ),
+    );
+    // Al volver, refresca la agenda por si se reabrió alguna cita.
+    if (mounted) {
+      setState(() => _agendaReload++);
+    }
   }
 
   Future<void> _nuevoCliente() async {
