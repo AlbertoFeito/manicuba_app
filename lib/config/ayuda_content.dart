@@ -58,6 +58,7 @@ class Ayudas {
       'Busca por nombre o teléfono con la barra superior.',
       'Pulsa "Nuevo" para agregar un cliente (nombre y teléfono son obligatorios).',
       'Toca un cliente para ver su ficha con contacto, notas e historial de citas.',
+      'En la ficha, toca el teléfono (o los iconos) para Llamar, abrir WhatsApp, enviar SMS o copiar el número.',
       'Desde la ficha puedes editar o eliminar al cliente.',
       'Un cliente con citas completadas no se puede eliminar (protege tu historial de ingresos); sí puedes editar sus datos.',
     ],
