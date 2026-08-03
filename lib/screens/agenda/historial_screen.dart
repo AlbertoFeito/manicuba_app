@@ -10,7 +10,7 @@ import '../../widgets/ayuda_button.dart';
 
 /// Historial de citas que ya salieron del calendario: completadas y
 /// canceladas. Las completadas son solo lectura (protegen el ingreso); las
-/// canceladas sí se pueden eliminar. Ambas se pueden "Reabrir".
+/// canceladas sí se pueden eliminar. Ambas se pueden "Deshacer".
 class HistorialScreen extends StatefulWidget {
   const HistorialScreen({super.key});
 

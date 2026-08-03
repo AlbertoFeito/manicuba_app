@@ -122,7 +122,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 },
               ),
               // Las citas completadas no se pueden eliminar (protegen el
-              // registro contable); solo se pueden reabrir desde el Historial.
+              // registro contable); solo se pueden deshacer desde el Historial.
               if (cita.estado != EstadoCita.completada)
                 ListTile(
                   leading: const Icon(Icons.delete_outline,
