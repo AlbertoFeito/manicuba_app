@@ -2,11 +2,13 @@ import '../config/constants.dart';
 import '../database/database_helper.dart';
 import '../models/cita.dart';
 import '../models/ingreso.dart';
+import 'cliente_service.dart';
 import 'finanzas_service.dart';
 
 class CitaService {
   final DatabaseHelper _db = DatabaseHelper();
   final FinanzasService _finanzas = FinanzasService();
+  final ClienteService _clientes = ClienteService();
 
   // Crear cita
   Future<int> crearCita(Cita cita) async {
@@ -30,6 +32,12 @@ class CitaService {
     final existentes = await _finanzas.obtenerIngresosPorCita(cita.id!);
     final debeTenerIngreso =
         cita.estado == EstadoCita.completada && (cita.monto ?? 0) > 0;
+
+    // Al completar una cita, registra la visita en la ficha del cliente
+    // (sirva de donde sirva la acción: formulario o agenda).
+    if (cita.estado == EstadoCita.completada) {
+      await _clientes.marcarUltimaVisita(cita.clienteId, cita.fechaHora);
+    }
 
     if (!debeTenerIngreso) {
       if (existentes.isNotEmpty) {
@@ -104,6 +112,17 @@ class CitaService {
   Future<int> eliminar(int id) async {
     await _finanzas.eliminarIngresosPorCita(id);
     return await _db.deleteCita(id);
+  }
+
+  // Eliminar todas las citas de un cliente (con sus ingresos). Se usa al
+  // borrar un cliente que no tiene citas completadas.
+  Future<void> eliminarPorCliente(int clienteId) async {
+    final citas = await obtenerPorCliente(clienteId);
+    for (final cita in citas) {
+      if (cita.id != null) {
+        await eliminar(cita.id!);
+      }
+    }
   }
 
   // Cambiar estado de cita

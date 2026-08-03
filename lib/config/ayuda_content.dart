@@ -59,6 +59,7 @@ class Ayudas {
       'Pulsa "Nuevo" para agregar un cliente (nombre y teléfono son obligatorios).',
       'Toca un cliente para ver su ficha con contacto, notas e historial de citas.',
       'Desde la ficha puedes editar o eliminar al cliente.',
+      'Un cliente con citas completadas no se puede eliminar (protege tu historial de ingresos); sí puedes editar sus datos.',
     ],
   );
 

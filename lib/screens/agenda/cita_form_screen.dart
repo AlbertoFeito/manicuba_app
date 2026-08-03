@@ -173,10 +173,8 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
       } else {
         await _citaService.crearCita(cita);
       }
-      // Actualiza la última visita del cliente si la cita queda completada.
-      if (_estado == EstadoCita.completada) {
-        await _clienteService.actualizarUltimaVisita(_clienteId!);
-      }
+      // La "última visita" del cliente y el ingreso los sincroniza
+      // CitaService al completar la cita (aquí no hace falta duplicarlo).
       if (!mounted) {
         return;
       }

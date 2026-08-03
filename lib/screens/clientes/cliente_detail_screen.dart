@@ -52,13 +52,47 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
   }
 
   Future<void> _eliminar() async {
+    final citas = await _citaService.obtenerPorCliente(_cliente.id!);
+    if (!mounted) {
+      return;
+    }
+    final completadas =
+        citas.where((c) => c.estado == EstadoCita.completada).length;
+
+    // Protección: no se borra un cliente con citas completadas (afectaría el
+    // historial de ingresos).
+    if (completadas > 0) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('No se puede eliminar'),
+          content: Text(
+            '${_cliente.nombre} tiene $completadas cita(s) completada(s) en su '
+            'historial contable. Para conservar tus ingresos, este cliente no '
+            'se puede eliminar. Puedes editar sus datos.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final otras = citas.length;
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar cliente'),
         content: Text(
-          '¿Eliminar a ${_cliente.nombre}? '
-          'Esta acción no se puede deshacer.',
+          otras > 0
+              ? '¿Eliminar a ${_cliente.nombre}? Se eliminarán también sus '
+                  '$otras cita(s) pendientes/canceladas. No se puede deshacer.'
+              : '¿Eliminar a ${_cliente.nombre}? Esta acción no se puede '
+                  'deshacer.',
         ),
         actions: [
           TextButton(
@@ -79,6 +113,7 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
     if (confirmar != true) {
       return;
     }
+    await _citaService.eliminarPorCliente(_cliente.id!);
     await _clienteService.eliminar(_cliente.id!);
     if (!mounted) {
       return;

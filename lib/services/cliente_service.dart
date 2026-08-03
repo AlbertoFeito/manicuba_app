@@ -65,12 +65,16 @@ class ClienteService {
     return clientes;
   }
 
-  // Actualizar última visita
+  // Actualizar última visita a ahora
   Future<int> actualizarUltimaVisita(int id) async {
+    return marcarUltimaVisita(id, DateTime.now());
+  }
+
+  // Fijar la última visita a una fecha concreta (p. ej. la fecha de la cita)
+  Future<int> marcarUltimaVisita(int id, DateTime fecha) async {
     final cliente = await obtenerPorId(id);
     if (cliente != null) {
-      final clienteActualizado =
-          cliente.copyWith(ultimaVisita: DateTime.now());
+      final clienteActualizado = cliente.copyWith(ultimaVisita: fecha);
       return await actualizar(clienteActualizado);
     }
     return 0;
