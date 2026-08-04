@@ -30,10 +30,18 @@ class FinanzasService {
     return _db.deleteIngresosByCita(citaId);
   }
 
+  Future<int> eliminarIngreso(int id) async {
+    return _db.deleteIngreso(id);
+  }
+
   // ===== GASTOS =====
 
   Future<int> registrarGasto(Gasto gasto) async {
     return await _db.insertGasto(gasto.toMap());
+  }
+
+  Future<int> eliminarGasto(int id) async {
+    return _db.deleteGasto(id);
   }
 
   Future<List<Gasto>> obtenerGastos() async {

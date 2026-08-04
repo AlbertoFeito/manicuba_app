@@ -70,7 +70,8 @@ class Ayudas {
     puntos: [
       'Arriba ves el balance del mes y los mini-balances de hoy y de la semana.',
       'Usa "Ingreso" o "Gasto" para registrar movimientos manualmente.',
-      'Los ingresos de las citas completadas aparecen aquí automáticamente (nota: "Generado por cita completada").',
+      'Los ingresos de las citas completadas aparecen aquí automáticamente (marcados como "automático" con un candado).',
+      'Toca un movimiento para eliminarlo si lo registraste por error. Los ingresos automáticos de citas no se borran aquí: hazlo con "Deshacer" en el Historial.',
       'El gráfico circular reparte tus gastos por categoría.',
       'Desliza hacia abajo para actualizar los datos.',
     ],

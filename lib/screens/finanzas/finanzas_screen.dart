@@ -18,16 +18,21 @@ class FinanzasScreen extends StatefulWidget {
 
 class _Movimiento {
   _Movimiento({
+    required this.id,
     required this.esIngreso,
     required this.etiqueta,
     required this.monto,
     required this.fecha,
+    this.automatico = false,
   });
 
+  final int? id;
   final bool esIngreso;
   final String etiqueta;
   final double monto;
   final DateTime fecha;
+  // true si es un ingreso generado por una cita completada (no editable aquí).
+  final bool automatico;
 }
 
 class _FinanzasScreenState extends State<FinanzasScreen> {
@@ -73,14 +78,19 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
     final movimientos = <_Movimiento>[
       ...ingresos.map(
         (i) => _Movimiento(
+          id: i.id,
           esIngreso: true,
-          etiqueta: 'Ingreso · ${i.metodo}',
+          etiqueta: i.citaId != null
+              ? 'Ingreso por cita · ${i.metodo}'
+              : 'Ingreso · ${i.metodo}',
           monto: i.monto,
           fecha: i.fecha,
+          automatico: i.citaId != null,
         ),
       ),
       ...gastos.map(
         (g) => _Movimiento(
+          id: g.id,
           esIngreso: false,
           etiqueta: '${g.concepto} · ${g.categoria}',
           monto: g.monto,
@@ -115,6 +125,64 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
     if (ok == true) {
       await _cargar();
     }
+  }
+
+  Future<void> _accionMovimiento(_Movimiento m) async {
+    if (m.automatico) {
+      // Los ingresos de citas se gestionan desde el Historial, no aquí.
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Ingreso de una cita'),
+          content: const Text(
+            'Este ingreso se generó al completar una cita. Para quitarlo, ve '
+            'al Historial de citas (menú ⋮) y usa "Deshacer" en esa cita.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    if (m.id == null) {
+      return;
+    }
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Eliminar ${m.esIngreso ? 'ingreso' : 'gasto'}'),
+        content: Text(
+          '¿Eliminar "${m.etiqueta}" por ${_formatoMoneda.format(m.monto)}? '
+          'No se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) {
+      return;
+    }
+    if (m.esIngreso) {
+      await _finanzasService.eliminarIngreso(m.id!);
+    } else {
+      await _finanzasService.eliminarGasto(m.id!);
+    }
+    await _cargar();
   }
 
   @override
@@ -354,6 +422,7 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
             m.esIngreso ? AppTheme.successColor : AppTheme.errorColor;
         return Card(
           child: ListTile(
+            onTap: () => _accionMovimiento(m),
             leading: CircleAvatar(
               backgroundColor: color.withOpacity(0.15),
               child: Icon(
@@ -362,10 +431,23 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
               ),
             ),
             title: Text(m.etiqueta, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(DateFormat('dd/MM/yyyy').format(m.fecha)),
-            trailing: Text(
-              '${m.esIngreso ? '+' : '-'}${_formatoMoneda.format(m.monto)}',
-              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            subtitle: Text(
+              '${DateFormat('dd/MM/yyyy').format(m.fecha)}'
+              '${m.automatico ? ' · automático' : ''}',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${m.esIngreso ? '+' : '-'}${_formatoMoneda.format(m.monto)}',
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                ),
+                Icon(
+                  m.automatico ? Icons.lock_outline : Icons.chevron_right,
+                  size: 18,
+                  color: Colors.grey,
+                ),
+              ],
             ),
           ),
         );

@@ -390,6 +390,11 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> deleteGasto(int id) async {
+    final db = await database;
+    return await db.delete('gastos', where: 'id = ?', whereArgs: [id]);
+  }
+
   // PRODUCTOS
   Future<int> insertProducto(Map<String, dynamic> producto) async {
     final db = await database;
