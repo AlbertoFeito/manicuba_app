@@ -33,4 +33,25 @@ void main() {
     await finanzas.eliminarIngreso(id);
     expect((await finanzas.obtenerIngresos()).any((i) => i.id == id), isFalse);
   });
+
+  test('Editar un gasto actualiza su monto', () async {
+    final id = await finanzas.registrarGasto(
+      Gasto(
+        concepto: 'Gasto Editable',
+        monto: 20,
+        categoria: 'Otros',
+        fecha: DateTime.now(),
+      ),
+    );
+    final original = (await finanzas.obtenerGastos()).firstWhere(
+      (g) => g.id == id,
+    );
+
+    await finanzas.actualizarGasto(original.copyWith(monto: 35));
+
+    final editado = (await finanzas.obtenerGastos()).firstWhere(
+      (g) => g.id == id,
+    );
+    expect(editado.monto, 35);
+  });
 }

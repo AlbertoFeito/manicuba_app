@@ -5,9 +5,11 @@ import '../../config/constants.dart';
 import '../../models/gasto.dart';
 import '../../services/finanzas_service.dart';
 
-/// Formulario para registrar un gasto.
+/// Formulario para registrar o editar un gasto.
 class GastoFormScreen extends StatefulWidget {
-  const GastoFormScreen({super.key});
+  const GastoFormScreen({super.key, this.gasto});
+
+  final Gasto? gasto;
 
   @override
   State<GastoFormScreen> createState() => _GastoFormScreenState();
@@ -21,9 +23,22 @@ class _GastoFormScreenState extends State<GastoFormScreen> {
   final _montoCtrl = TextEditingController();
   final _notasCtrl = TextEditingController();
 
-  String _categoria = AppConstants.categoriasGastos.first;
-  DateTime _fecha = DateTime.now();
+  late String _categoria;
+  late DateTime _fecha;
   bool _guardando = false;
+
+  bool get _esEdicion => widget.gasto != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final g = widget.gasto;
+    _categoria = g?.categoria ?? AppConstants.categoriasGastos.first;
+    _fecha = g?.fecha ?? DateTime.now();
+    _conceptoCtrl.text = g?.concepto ?? '';
+    _montoCtrl.text = g != null ? g.monto.toStringAsFixed(2) : '';
+    _notasCtrl.text = g?.notas ?? '';
+  }
 
   @override
   void dispose() {
@@ -52,6 +67,7 @@ class _GastoFormScreenState extends State<GastoFormScreen> {
     setState(() => _guardando = true);
 
     final gasto = Gasto(
+      id: widget.gasto?.id,
       concepto: _conceptoCtrl.text.trim(),
       monto: double.parse(_montoCtrl.text.replaceAll(',', '.')),
       categoria: _categoria,
@@ -60,12 +76,22 @@ class _GastoFormScreenState extends State<GastoFormScreen> {
     );
 
     try {
-      await _finanzasService.registrarGasto(gasto);
+      if (_esEdicion) {
+        await _finanzasService.actualizarGasto(gasto);
+      } else {
+        await _finanzasService.registrarGasto(gasto);
+      }
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppConstants.msgSucessoGuardar)),
+        SnackBar(
+          content: Text(
+            _esEdicion
+                ? AppConstants.msgSucessoActualizar
+                : AppConstants.msgSucessoGuardar,
+          ),
+        ),
       );
       Navigator.of(context).pop(true);
     } catch (_) {
@@ -100,7 +126,9 @@ class _GastoFormScreenState extends State<GastoFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar gasto')),
+      appBar: AppBar(
+        title: Text(_esEdicion ? 'Editar gasto' : 'Registrar gasto'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -173,7 +201,7 @@ class _GastoFormScreenState extends State<GastoFormScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
-              label: const Text('Guardar gasto'),
+              label: Text(_esEdicion ? 'Guardar cambios' : 'Guardar gasto'),
             ),
           ],
         ),

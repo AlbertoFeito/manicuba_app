@@ -354,6 +354,16 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> updateIngreso(Map<String, dynamic> ingreso) async {
+    final db = await database;
+    return await db.update(
+      'ingresos',
+      ingreso,
+      where: 'id = ?',
+      whereArgs: [ingreso['id']],
+    );
+  }
+
   Future<int> deleteIngreso(int id) async {
     final db = await database;
     return await db.delete('ingresos', where: 'id = ?', whereArgs: [id]);
@@ -387,6 +397,16 @@ class DatabaseHelper {
       where: "DATE(fecha) = ?",
       whereArgs: [fechaStr],
       orderBy: 'fecha DESC',
+    );
+  }
+
+  Future<int> updateGasto(Map<String, dynamic> gasto) async {
+    final db = await database;
+    return await db.update(
+      'gastos',
+      gasto,
+      where: 'id = ?',
+      whereArgs: [gasto['id']],
     );
   }
 

@@ -71,8 +71,9 @@ class Ayudas {
       'Arriba ves el balance del mes y los mini-balances de hoy y de la semana.',
       'Usa "Ingreso" o "Gasto" para registrar movimientos manualmente.',
       'Los ingresos de las citas completadas aparecen aquí automáticamente (marcados como "automático" con un candado).',
-      'Toca un movimiento para eliminarlo si lo registraste por error. Los ingresos automáticos de citas no se borran aquí: hazlo con "Deshacer" en el Historial.',
-      'El gráfico circular reparte tus gastos por categoría.',
+      'Toca un movimiento para Editarlo o Eliminarlo si lo registraste por error. Los ingresos automáticos de citas no se editan aquí: usa "Deshacer" en el Historial.',
+      'Usa los filtros Hoy / Semana / Mes / Todo para acotar los movimientos y el gráfico de gastos.',
+      'El gráfico circular reparte tus gastos por categoría del periodo elegido.',
       'Desliza hacia abajo para actualizar los datos.',
     ],
   );
@@ -103,7 +104,8 @@ class Ayudas {
     puntos: [
       'Controla tus productos: stock actual, mínimo y costo.',
       'Usa los botones + y − para ajustar el stock rápidamente.',
-      'Los productos por debajo del mínimo se marcan como "Bajo" y suman en la alerta de bajo stock.',
+      'Busca por nombre o categoría con la barra superior.',
+      'Los productos por debajo del mínimo se marcan como "Bajo"; toca la tarjeta "Bajo stock" para ver solo esos.',
       'Arriba ves el valor total del inventario.',
     ],
   );

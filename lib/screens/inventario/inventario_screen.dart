@@ -21,15 +21,24 @@ class _InventarioScreenState extends State<InventarioScreen> {
   final _inventarioService = InventarioService();
   final _formatoMoneda = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
 
+  final _busquedaCtrl = TextEditingController();
+
   List<Producto> _productos = [];
   double _valorTotal = 0;
   int _bajoStock = 0;
   bool _cargando = true;
+  bool _soloBajoStock = false;
 
   @override
   void initState() {
     super.initState();
     _cargar();
+  }
+
+  @override
+  void dispose() {
+    _busquedaCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _cargar() async {
@@ -45,6 +54,17 @@ class _InventarioScreenState extends State<InventarioScreen> {
       _bajoStock = productos.where((p) => p.bajoStock).length;
       _cargando = false;
     });
+  }
+
+  List<Producto> get _filtrados {
+    final q = _busquedaCtrl.text.trim().toLowerCase();
+    return _productos.where((p) {
+      final coincide = q.isEmpty ||
+          p.nombre.toLowerCase().contains(q) ||
+          p.categoria.toLowerCase().contains(q);
+      final pasaBajoStock = !_soloBajoStock || p.bajoStock;
+      return coincide && pasaBajoStock;
+    }).toList();
   }
 
   Future<void> _abrirFormulario({Producto? producto}) async {
@@ -113,6 +133,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
           : Column(
               children: [
                 _buildResumen(),
+                _buildBusqueda(),
                 Expanded(child: _buildLista()),
               ],
             ),
@@ -141,12 +162,37 @@ class _InventarioScreenState extends State<InventarioScreen> {
           Expanded(
             child: _tarjetaResumen(
               icon: Icons.warning_amber,
-              titulo: 'Bajo stock',
+              titulo: _soloBajoStock ? 'Bajo stock (activo)' : 'Bajo stock',
               valor: '$_bajoStock',
-              color: _bajoStock > 0 ? AppTheme.errorColor : AppTheme.successColor,
+              color:
+                  _bajoStock > 0 ? AppTheme.errorColor : AppTheme.successColor,
+              onTap: _bajoStock > 0
+                  ? () => setState(() => _soloBajoStock = !_soloBajoStock)
+                  : null,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBusqueda() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: TextField(
+        controller: _busquedaCtrl,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: 'Buscar por nombre o categoría',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _busquedaCtrl.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () => setState(() => _busquedaCtrl.clear()),
+                ),
+        ),
       ),
     );
   }
@@ -156,24 +202,29 @@ class _InventarioScreenState extends State<InventarioScreen> {
     required String titulo,
     required String valor,
     required Color color,
+    VoidCallback? onTap,
   }) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 6),
-            Text(
-              valor,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 6),
+              Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
-            ),
-            Text(titulo, style: Theme.of(context).textTheme.bodySmall),
-          ],
+              Text(titulo, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );
@@ -204,13 +255,26 @@ class _InventarioScreenState extends State<InventarioScreen> {
         ),
       );
     }
+    final lista = _filtrados;
+    if (lista.isEmpty) {
+      return Center(
+        child: Text(
+          _soloBajoStock
+              ? 'No hay productos con bajo stock'
+              : 'Sin resultados para tu búsqueda',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+        ),
+      );
+    }
     return RefreshIndicator(
       onRefresh: _cargar,
       child: ListView.builder(
         padding: const EdgeInsets.only(bottom: 88),
-        itemCount: _productos.length,
+        itemCount: lista.length,
         itemBuilder: (context, index) {
-          final producto = _productos[index];
+          final producto = lista[index];
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: ListTile(

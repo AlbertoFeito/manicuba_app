@@ -5,9 +5,11 @@ import '../../config/constants.dart';
 import '../../models/ingreso.dart';
 import '../../services/finanzas_service.dart';
 
-/// Formulario para registrar un ingreso.
+/// Formulario para registrar o editar un ingreso.
 class IngresoFormScreen extends StatefulWidget {
-  const IngresoFormScreen({super.key});
+  const IngresoFormScreen({super.key, this.ingreso});
+
+  final Ingreso? ingreso;
 
   @override
   State<IngresoFormScreen> createState() => _IngresoFormScreenState();
@@ -20,9 +22,21 @@ class _IngresoFormScreenState extends State<IngresoFormScreen> {
   final _montoCtrl = TextEditingController();
   final _notasCtrl = TextEditingController();
 
-  String _metodo = AppConstants.metodosPago.first;
-  DateTime _fecha = DateTime.now();
+  late String _metodo;
+  late DateTime _fecha;
   bool _guardando = false;
+
+  bool get _esEdicion => widget.ingreso != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final i = widget.ingreso;
+    _metodo = i?.metodo ?? AppConstants.metodosPago.first;
+    _fecha = i?.fecha ?? DateTime.now();
+    _montoCtrl.text = i != null ? i.monto.toStringAsFixed(2) : '';
+    _notasCtrl.text = i?.notas ?? '';
+  }
 
   @override
   void dispose() {
@@ -50,6 +64,8 @@ class _IngresoFormScreenState extends State<IngresoFormScreen> {
     setState(() => _guardando = true);
 
     final ingreso = Ingreso(
+      id: widget.ingreso?.id,
+      citaId: widget.ingreso?.citaId,
       monto: double.parse(_montoCtrl.text.replaceAll(',', '.')),
       metodo: _metodo,
       fecha: _fecha,
@@ -57,12 +73,22 @@ class _IngresoFormScreenState extends State<IngresoFormScreen> {
     );
 
     try {
-      await _finanzasService.registrarIngreso(ingreso);
+      if (_esEdicion) {
+        await _finanzasService.actualizarIngreso(ingreso);
+      } else {
+        await _finanzasService.registrarIngreso(ingreso);
+      }
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppConstants.msgSucessoGuardar)),
+        SnackBar(
+          content: Text(
+            _esEdicion
+                ? AppConstants.msgSucessoActualizar
+                : AppConstants.msgSucessoGuardar,
+          ),
+        ),
       );
       Navigator.of(context).pop(true);
     } catch (_) {
@@ -90,7 +116,9 @@ class _IngresoFormScreenState extends State<IngresoFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar ingreso')),
+      appBar: AppBar(
+        title: Text(_esEdicion ? 'Editar ingreso' : 'Registrar ingreso'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -153,7 +181,7 @@ class _IngresoFormScreenState extends State<IngresoFormScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
-              label: const Text('Guardar ingreso'),
+              label: Text(_esEdicion ? 'Guardar cambios' : 'Guardar ingreso'),
             ),
           ],
         ),

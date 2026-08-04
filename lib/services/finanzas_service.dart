@@ -30,6 +30,10 @@ class FinanzasService {
     return _db.deleteIngresosByCita(citaId);
   }
 
+  Future<int> actualizarIngreso(Ingreso ingreso) async {
+    return _db.updateIngreso(ingreso.toMap());
+  }
+
   Future<int> eliminarIngreso(int id) async {
     return _db.deleteIngreso(id);
   }
@@ -38,6 +42,10 @@ class FinanzasService {
 
   Future<int> registrarGasto(Gasto gasto) async {
     return await _db.insertGasto(gasto.toMap());
+  }
+
+  Future<int> actualizarGasto(Gasto gasto) async {
+    return _db.updateGasto(gasto.toMap());
   }
 
   Future<int> eliminarGasto(int id) async {
