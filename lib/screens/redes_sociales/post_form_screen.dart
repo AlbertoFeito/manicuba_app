@@ -5,10 +5,12 @@ import '../../config/theme.dart';
 import '../../models/post_redes.dart';
 import '../../services/redes_service.dart';
 
-/// Formulario para crear un post de redes sociales con ayudas de emojis y
-/// hashtags sugeridos.
+/// Formulario para crear o editar un post de redes sociales con ayudas de
+/// emojis y hashtags sugeridos.
 class PostFormScreen extends StatefulWidget {
-  const PostFormScreen({super.key});
+  const PostFormScreen({super.key, this.post});
+
+  final PostRedes? post;
 
   @override
   State<PostFormScreen> createState() => _PostFormScreenState();
@@ -23,9 +25,35 @@ class _PostFormScreenState extends State<PostFormScreen> {
   final _emojisCtrl = TextEditingController();
   final _hashtagsCtrl = TextEditingController();
 
-  String _tipo = AppConstants.tiposPost.first;
-  String _plataforma = AppConstants.plataformasSociales.first;
+  late String _tipo;
+  late String _plataforma;
   bool _guardando = false;
+
+  bool get _esEdicion => widget.post != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.post;
+    _tituloCtrl.text = p?.titulo ?? '';
+    _contenidoCtrl.text = p?.contenido ?? '';
+    _emojisCtrl.text = p?.emojis ?? '';
+    _hashtagsCtrl.text = p?.hashtags ?? '';
+    _tipo = _coincidir(AppConstants.tiposPost, p?.tipo);
+    _plataforma = _coincidir(AppConstants.plataformasSociales, p?.plataforma);
+  }
+
+  // Devuelve el valor de [opciones] que coincide (sin distinguir mayúsculas)
+  // con [valor]; si no hay coincidencia, el primero de la lista.
+  String _coincidir(List<String> opciones, String? valor) {
+    if (valor == null) {
+      return opciones.first;
+    }
+    return opciones.firstWhere(
+      (o) => o.toLowerCase() == valor.toLowerCase(),
+      orElse: () => opciones.first,
+    );
+  }
 
   @override
   void dispose() {
@@ -62,7 +90,9 @@ class _PostFormScreenState extends State<PostFormScreen> {
     }
     setState(() => _guardando = true);
 
+    final anterior = widget.post;
     final post = PostRedes(
+      id: anterior?.id,
       titulo: _tituloCtrl.text.trim(),
       contenido: _contenidoCtrl.text.trim(),
       emojis: _emojisCtrl.text.trim().isEmpty ? null : _emojisCtrl.text.trim(),
@@ -70,16 +100,30 @@ class _PostFormScreenState extends State<PostFormScreen> {
           _hashtagsCtrl.text.trim().isEmpty ? null : _hashtagsCtrl.text.trim(),
       tipo: _tipo.toLowerCase(),
       plataforma: _plataforma.toLowerCase(),
-      fechaCreacion: DateTime.now(),
+      fechaCreacion: anterior?.fechaCreacion ?? DateTime.now(),
+      fechaProgramada: anterior?.fechaProgramada,
+      publicado: anterior?.publicado ?? false,
+      visualizaciones: anterior?.visualizaciones ?? 0,
+      notas: anterior?.notas,
     );
 
     try {
-      await _redesService.crearPost(post);
+      if (_esEdicion) {
+        await _redesService.actualizar(post);
+      } else {
+        await _redesService.crearPost(post);
+      }
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppConstants.msgSucessoGuardar)),
+        SnackBar(
+          content: Text(
+            _esEdicion
+                ? AppConstants.msgSucessoActualizar
+                : AppConstants.msgSucessoGuardar,
+          ),
+        ),
       );
       Navigator.of(context).pop(true);
     } catch (_) {
@@ -103,7 +147,9 @@ class _PostFormScreenState extends State<PostFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Nuevo post')),
+      appBar: AppBar(
+        title: Text(_esEdicion ? 'Editar post' : 'Nuevo post'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -203,7 +249,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
-              label: const Text('Guardar post'),
+              label: Text(_esEdicion ? 'Guardar cambios' : 'Guardar post'),
             ),
           ],
         ),

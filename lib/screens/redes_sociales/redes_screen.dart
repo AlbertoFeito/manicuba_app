@@ -21,6 +21,8 @@ class _RedesScreenState extends State<RedesScreen> {
 
   List<PostRedes> _posts = [];
   bool _cargando = true;
+  // 0 = Todos, 1 = Pendientes, 2 = Publicados
+  int _filtro = 0;
 
   @override
   void initState() {
@@ -40,9 +42,29 @@ class _RedesScreenState extends State<RedesScreen> {
     });
   }
 
+  List<PostRedes> get _filtrados {
+    switch (_filtro) {
+      case 1:
+        return _posts.where((p) => !p.publicado).toList();
+      case 2:
+        return _posts.where((p) => p.publicado).toList();
+      default:
+        return _posts;
+    }
+  }
+
   Future<void> _nuevoPost() async {
     final guardado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const PostFormScreen()),
+    );
+    if (guardado == true) {
+      await _cargar();
+    }
+  }
+
+  Future<void> _editar(PostRedes post) async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => PostFormScreen(post: post)),
     );
     if (guardado == true) {
       await _cargar();
@@ -149,12 +171,50 @@ class _RedesScreenState extends State<RedesScreen> {
         ),
       );
     }
-    return RefreshIndicator(
-      onRefresh: _cargar,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 88, top: 8),
-        itemCount: _posts.length,
-        itemBuilder: (context, index) => _buildPostCard(_posts[index]),
+    final lista = _filtrados;
+    return Column(
+      children: [
+        _buildFiltro(),
+        Expanded(
+          child: lista.isEmpty
+              ? Center(
+                  child: Text(
+                    'No hay posts en este filtro',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _cargar,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 88, top: 4),
+                    itemCount: lista.length,
+                    itemBuilder: (context, index) =>
+                        _buildPostCard(lista[index]),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFiltro() {
+    const etiquetas = ['Todos', 'Pendientes', 'Publicados'];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Row(
+        children: [
+          for (var i = 0; i < etiquetas.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(etiquetas[i]),
+                selected: _filtro == i,
+                onSelected: (_) => setState(() => _filtro = i),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -210,8 +270,8 @@ class _RedesScreenState extends State<RedesScreen> {
             const SizedBox(height: 6),
             Wrap(
               children: [
-                _metaChip(Icons.category, post.tipo),
-                _metaChip(Icons.public, post.plataforma),
+                _metaChip(Icons.category, _capitalizar(post.tipo)),
+                _metaChip(Icons.public, _capitalizar(post.plataforma)),
               ],
             ),
             const Divider(),
@@ -220,6 +280,7 @@ class _RedesScreenState extends State<RedesScreen> {
               children: [
                 _accion(Icons.copy, 'Copiar', () => _copiar(post)),
                 _accion(Icons.share, 'Compartir', () => _compartir(post)),
+                _accion(Icons.edit, 'Editar', () => _editar(post)),
                 _accion(
                   post.publicado ? Icons.undo : Icons.check_circle,
                   post.publicado ? 'Pendiente' : 'Publicar',
@@ -237,6 +298,13 @@ class _RedesScreenState extends State<RedesScreen> {
         ),
       ),
     );
+  }
+
+  String _capitalizar(String texto) {
+    if (texto.isEmpty) {
+      return texto;
+    }
+    return texto[0].toUpperCase() + texto.substring(1);
   }
 
   Widget _metaChip(IconData icon, String texto) {

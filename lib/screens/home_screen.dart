@@ -204,6 +204,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
+            // Recarga automáticamente Finanzas al abrir su pestaña, para que
+            // refleje al instante los ingresos de citas recién completadas.
+            if (index == 3) {
+              _finanzasReload++;
+            }
           });
           if (index == 0) {
             _cargarResumen();

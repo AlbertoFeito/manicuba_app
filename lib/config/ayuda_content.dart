@@ -84,7 +84,8 @@ class Ayudas {
     puntos: [
       'Pulsa "Nuevo post" y escribe título y contenido.',
       'Toca los chips sugeridos para añadir emojis y hashtags al instante.',
-      'En cada post: Copiar (al portapapeles), Compartir (a WhatsApp/Instagram), marcar Publicado/Pendiente o Eliminar.',
+      'En cada post: Copiar (al portapapeles), Compartir (a WhatsApp/Instagram), Editar, marcar Publicado/Pendiente o Eliminar.',
+      'Usa los filtros Todos / Pendientes / Publicados para organizar tus posts.',
     ],
   );
 
