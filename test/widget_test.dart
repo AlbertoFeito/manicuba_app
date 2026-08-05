@@ -12,7 +12,14 @@ void main() {
   testWidgets('La app arranca en la pantalla de inicio',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
-    await tester.pump();
+    // Deja que el gate de licencia resuelva su Future (prueba activa) y pase
+    // a la pantalla de inicio, sin usar pumpAndSettle (hay animaciones vivas).
+    for (var i = 0;
+        i < 10 &&
+            find.text('¡Bienvenida a ManiCuba! 💅').evaluate().isEmpty;
+        i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
 
     // El saludo de bienvenida está presente.
     expect(find.text('¡Bienvenida a ManiCuba! 💅'), findsOneWidget);

@@ -10,6 +10,7 @@ import 'finanzas/finanzas_screen.dart';
 import 'finanzas/gasto_form_screen.dart';
 import 'galeria/galeria_screen.dart';
 import 'inventario/inventario_screen.dart';
+import 'licencia/licencia_screen.dart';
 import 'redes_sociales/redes_screen.dart';
 import 'redes_sociales/post_form_screen.dart';
 import 'servicios/servicios_screen.dart';
@@ -123,6 +124,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _abrirGaleria();
               } else if (value == 'historial') {
                 _abrirHistorial();
+              } else if (value == 'licencia') {
+                _abrirLicencia();
               }
             },
             itemBuilder: (_) => const [
@@ -155,6 +158,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListTile(
                   leading: Icon(Icons.photo_library),
                   title: Text('Galería de trabajos'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'licencia',
+                child: ListTile(
+                  leading: Icon(Icons.workspace_premium),
+                  title: Text('Licencia'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -520,6 +531,14 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => const GaleriaScreen(),
+      ),
+    );
+  }
+
+  Future<void> _abrirLicencia() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const LicenciaScreen(),
       ),
     );
   }
