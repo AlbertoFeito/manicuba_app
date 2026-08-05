@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
-import '../config/constants.dart';
 import 'agenda/agenda_screen.dart';
 import 'agenda/cita_form_screen.dart';
 import 'agenda/historial_screen.dart';
@@ -343,36 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
 
-            const SizedBox(height: 32),
-
-            // Información de desarrollo
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue, width: 1),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '📱 Estado de Desarrollo',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.blue,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Versión: ${AppConstants.appVersion}\n'
-                    'Base de datos: Inicializada\n'
-                    'Modo: Offline-First\n'
-                    'Autor: ${AppConstants.appAuthor}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
