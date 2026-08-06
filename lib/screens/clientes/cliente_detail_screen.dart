@@ -129,6 +129,10 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
   String get _telefonoDigitos =>
       _cliente.telefono.replaceAll(RegExp(r'[^0-9]'), '');
 
+  // Para tel:/smsto: se usa el número sin espacios (con el + inicial), ya
+  // que algunos marcadores no interpretan bien los espacios en la URI.
+  String get _telefonoUri => _cliente.telefono.replaceAll(' ', '');
+
   Future<void> _lanzar(Uri uri) async {
     try {
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -166,7 +170,7 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
               title: const Text('Llamar'),
               onTap: () {
                 Navigator.of(ctx).pop();
-                _lanzar(Uri(scheme: 'tel', path: _cliente.telefono));
+                _lanzar(Uri(scheme: 'tel', path: _telefonoUri));
               },
             ),
             ListTile(
@@ -182,7 +186,7 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
               title: const Text('Enviar SMS'),
               onTap: () {
                 Navigator.of(ctx).pop();
-                _lanzar(Uri(scheme: 'smsto', path: _cliente.telefono));
+                _lanzar(Uri(scheme: 'smsto', path: _telefonoUri));
               },
             ),
             ListTile(
@@ -388,13 +392,19 @@ class _ClienteDetailScreenState extends State<ClienteDetailScreen> {
               icon: const Icon(Icons.call, color: AppTheme.successColor),
               tooltip: 'Llamar',
               onPressed: () =>
-                  _lanzar(Uri(scheme: 'tel', path: _cliente.telefono)),
+                  _lanzar(Uri(scheme: 'tel', path: _telefonoUri)),
             ),
             IconButton(
               icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
               tooltip: 'WhatsApp',
               onPressed: () =>
                   _lanzar(Uri.parse('https://wa.me/$_telefonoDigitos')),
+            ),
+            IconButton(
+              icon: const Icon(Icons.sms, color: AppTheme.infoColor),
+              tooltip: 'SMS',
+              onPressed: () =>
+                  _lanzar(Uri(scheme: 'smsto', path: _telefonoUri)),
             ),
           ],
         ),
