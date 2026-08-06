@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/constants.dart';
 import '../../models/producto.dart';
+import '../../services/categoria_service.dart';
 import '../../services/inventario_service.dart';
 
 /// Formulario para crear o editar un producto del inventario.
@@ -17,14 +18,17 @@ class ProductoFormScreen extends StatefulWidget {
 class _ProductoFormScreenState extends State<ProductoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _inventarioService = InventarioService();
+  final _categoriaService = CategoriaService();
 
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _stockCtrl;
   late final TextEditingController _minimoCtrl;
   late final TextEditingController _costoCtrl;
   late final TextEditingController _proveedorCtrl;
+  final _nuevaCategoriaCtrl = TextEditingController();
 
   late String _categoria;
+  List<String> _categorias = AppConstants.categoriasProductos;
   bool _guardando = false;
 
   bool get _esEdicion => widget.producto != null;
@@ -45,6 +49,22 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     );
     _proveedorCtrl = TextEditingController(text: p?.proveedor ?? '');
     _categoria = p?.categoria ?? AppConstants.categoriasProductos.first;
+    _cargarCategorias();
+  }
+
+  Future<void> _cargarCategorias() async {
+    final categorias = await _categoriaService.obtenerCategorias();
+    // Si el producto tiene una categoría "legado" que ya no está en la
+    // lista (de fábrica ni personalizada), se agrega igual para no romper
+    // el selector.
+    final lista = List<String>.from(categorias);
+    if (_categoria.isNotEmpty && !lista.contains(_categoria)) {
+      lista.insert(lista.length - 1, _categoria);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() => _categorias = lista);
   }
 
   @override
@@ -54,6 +74,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     _minimoCtrl.dispose();
     _costoCtrl.dispose();
     _proveedorCtrl.dispose();
+    _nuevaCategoriaCtrl.dispose();
     super.dispose();
   }
 
@@ -63,10 +84,16 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     }
     setState(() => _guardando = true);
 
+    var categoriaFinal = _categoria;
+    if (_categoria == 'Otros') {
+      categoriaFinal = _nuevaCategoriaCtrl.text.trim();
+      await _categoriaService.agregarCategoria(categoriaFinal);
+    }
+
     final producto = Producto(
       id: widget.producto?.id,
       nombre: _nombreCtrl.text.trim(),
-      categoria: _categoria,
+      categoria: categoriaFinal,
       cantidadStock: int.parse(_stockCtrl.text.trim()),
       cantidadMinima: int.parse(_minimoCtrl.text.trim()),
       costoUnitario: double.parse(_costoCtrl.text.replaceAll(',', '.')),
@@ -162,14 +189,36 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                 labelText: 'Categoría',
                 prefixIcon: Icon(Icons.category),
               ),
-              items: AppConstants.categoriasProductos
+              items: _categorias
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                   .toList(),
-              onChanged: (value) => setState(
-                () =>
-                    _categoria = value ?? AppConstants.categoriasProductos.first,
-              ),
+              onChanged: (value) => setState(() {
+                _categoria = value ?? _categorias.first;
+                if (_categoria != 'Otros') {
+                  _nuevaCategoriaCtrl.clear();
+                }
+              }),
             ),
+            if (_categoria == 'Otros') ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nuevaCategoriaCtrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Nueva categoría *',
+                  prefixIcon: Icon(Icons.add_circle_outline),
+                  helperText: 'Quedará guardada para tus próximos productos',
+                ),
+                validator: (value) {
+                  if (_categoria == 'Otros' &&
+                      (value == null || value.trim().isEmpty)) {
+                    return 'Escribe el nombre de la nueva categoría';
+                  }
+                  return null;
+                },
+              ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [

@@ -17,6 +17,8 @@ class ClienteFormScreen extends StatefulWidget {
 }
 
 class _ClienteFormScreenState extends State<ClienteFormScreen> {
+  static const _prefijoPais = '+53';
+
   final _formKey = GlobalKey<FormState>();
   final _clienteService = ClienteService();
 
@@ -35,10 +37,24 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
     super.initState();
     final c = widget.cliente;
     _nombreCtrl = TextEditingController(text: c?.nombre ?? '');
-    _telefonoCtrl = TextEditingController(text: c?.telefono ?? '');
+    _telefonoCtrl = TextEditingController(text: _soloLocal(c?.telefono));
     _emailCtrl = TextEditingController(text: c?.email ?? '');
     _direccionCtrl = TextEditingController(text: c?.direccion ?? '');
     _notasCtrl = TextEditingController(text: c?.notas ?? '');
+  }
+
+  /// Quita el prefijo "+53" (si ya lo tenía) para mostrar solo el número
+  /// local en el campo editable; el prefijo se muestra aparte y se vuelve
+  /// a anteponer al guardar.
+  String _soloLocal(String? telefono) {
+    if (telefono == null) {
+      return '';
+    }
+    final t = telefono.trim();
+    if (t.startsWith(_prefijoPais)) {
+      return t.substring(_prefijoPais.length).trim();
+    }
+    return t;
   }
 
   @override
@@ -60,7 +76,7 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
     final cliente = Cliente(
       id: widget.cliente?.id,
       nombre: _nombreCtrl.text.trim(),
-      telefono: _telefonoCtrl.text.trim(),
+      telefono: '$_prefijoPais ${_telefonoCtrl.text.trim()}',
       email: _textoONull(_emailCtrl.text),
       direccion: _textoONull(_direccionCtrl.text),
       notas: _textoONull(_notasCtrl.text),
@@ -156,6 +172,8 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
               decoration: const InputDecoration(
                 labelText: 'Teléfono *',
                 prefixIcon: Icon(Icons.phone),
+                prefixText: '$_prefijoPais  ',
+                helperText: 'Escribe solo el número, sin el +53',
               ),
               validator: _validarTelefono,
             ),
