@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../models/post_redes.dart';
+import '../../services/compartir_service.dart';
 import '../../services/redes_service.dart';
 import 'post_form_screen.dart';
 
@@ -18,6 +18,7 @@ class RedesScreen extends StatefulWidget {
 
 class _RedesScreenState extends State<RedesScreen> {
   final _redesService = RedesService();
+  final _compartirService = CompartirService();
 
   List<PostRedes> _posts = [];
   bool _cargando = true;
@@ -83,10 +84,21 @@ class _RedesScreenState extends State<RedesScreen> {
   }
 
   Future<void> _compartir(PostRedes post) async {
-    await Share.share(
-      post.getContenidoFormateado(),
-      subject: post.titulo,
-    );
+    final modo = await _compartirService.compartirPost(post);
+    if (!mounted) {
+      return;
+    }
+    final String? mensaje = switch (modo) {
+      ModoCompartir.appDirecta => null,
+      ModoCompartir.hojaSistema => null,
+      ModoCompartir.textoPegar => 'Texto copiado: pégalo en la publicación',
+      ModoCompartir.fallo => 'No se pudo compartir el post',
+    };
+    if (mensaje != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensaje)),
+      );
+    }
   }
 
   Future<void> _alternarPublicado(PostRedes post) async {
@@ -272,6 +284,11 @@ class _RedesScreenState extends State<RedesScreen> {
               children: [
                 _metaChip(Icons.category, _capitalizar(post.tipo)),
                 _metaChip(Icons.public, _capitalizar(post.plataforma)),
+                if (post.listaFotoIds.isNotEmpty)
+                  _metaChip(
+                    Icons.photo,
+                    '${post.listaFotoIds.length} foto(s)',
+                  ),
               ],
             ),
             const Divider(),

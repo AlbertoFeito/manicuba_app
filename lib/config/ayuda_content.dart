@@ -84,7 +84,9 @@ class Ayudas {
     puntos: [
       'Pulsa "Nuevo post" y escribe título y contenido.',
       'Toca los chips sugeridos para añadir emojis y hashtags al instante.',
-      'En cada post: Copiar (al portapapeles), Compartir (a WhatsApp/Instagram), Editar, marcar Publicado/Pendiente o Eliminar.',
+      'Puedes agregar fotos al post (de la cámara, la galería del teléfono o tu Galería de trabajos) desde el formulario.',
+      'En cada post: Copiar (al portapapeles), Compartir, Editar, marcar Publicado/Pendiente o Eliminar.',
+      'Compartir abre WhatsApp directo con el texto listo. Instagram y Facebook no permiten rellenar el texto: la app lo copia al portapapeles para que solo tengas que pegarlo.',
       'Usa los filtros Todos / Pendientes / Publicados para organizar tus posts.',
     ],
   );
