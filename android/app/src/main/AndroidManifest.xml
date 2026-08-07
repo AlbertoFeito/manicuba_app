@@ -35,6 +35,17 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Sirve las fotos adjuntas a WhatsApp/Instagram/Facebook al
+             compartir directo (ver MainActivity.kt). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -56,15 +67,17 @@
             <action android:name="android.intent.action.SENDTO"/>
             <data android:scheme="smsto"/>
         </intent>
-        <!-- WhatsApp / enlaces web (https) -->
+        <!-- Enlaces web (https) -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
         </intent>
-        <!-- Compartir directo a WhatsApp -->
-        <intent>
-            <action android:name="android.intent.action.VIEW"/>
-            <data android:scheme="whatsapp"/>
-        </intent>
+        <!-- Compartir directo a WhatsApp/Instagram/Facebook: hace falta
+             declarar cada paquete para poder abrirlo por Intent explícito
+             (visibilidad de paquetes en Android 11+). -->
+        <package android:name="com.whatsapp"/>
+        <package android:name="com.whatsapp.w4b"/>
+        <package android:name="com.instagram.android"/>
+        <package android:name="com.facebook.katana"/>
     </queries>
 </manifest>

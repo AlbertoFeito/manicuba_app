@@ -1,52 +1,49 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/post_redes.dart';
+import 'compartir_nativo.dart';
 import 'foto_service.dart';
 
 /// Cómo terminó un intento de compartir un post.
 enum ModoCompartir { appDirecta, hojaSistema, textoPegar, fallo }
 
-/// Decide, según la plataforma del post, si conviene abrir WhatsApp
-/// directo y/o copiar el texto al portapapeles antes de compartir.
-class PlanCompartir {
-  const PlanCompartir({
-    required this.intentarWhatsApp,
-    required this.copiarTexto,
-  });
-
-  final bool intentarWhatsApp;
-  final bool copiarTexto;
+/// Paquete Android de la app a abrir directo según la plataforma del post,
+/// o `null` si no hay una app específica que abrir (p. ej. "Todas").
+String? paqueteParaPlataforma(String plataforma) {
+  switch (plataforma.toLowerCase()) {
+    case 'whatsapp':
+      return 'com.whatsapp';
+    case 'instagram':
+      return 'com.instagram.android';
+    case 'facebook':
+      return 'com.facebook.katana';
+    default:
+      return null;
+  }
 }
 
-/// Instagram y Facebook ignoran por política propia el texto pre-rellenado
-/// de sus intents de compartir; solo WhatsApp lo respeta. Para esas dos (y
-/// para WhatsApp cuando hay fotos, que no se pueden adjuntar al deep link)
-/// se copia el texto al portapapeles para que la usuaria lo pegue.
-PlanCompartir planificarCompartir(
-  String plataforma, {
-  required bool conFotos,
-}) {
-  final p = plataforma.toLowerCase();
-  if (p == 'whatsapp' && !conFotos) {
-    return const PlanCompartir(intentarWhatsApp: true, copiarTexto: false);
-  }
-  if (p == 'whatsapp' || p == 'instagram' || p == 'facebook') {
-    return const PlanCompartir(intentarWhatsApp: false, copiarTexto: true);
-  }
-  return const PlanCompartir(intentarWhatsApp: false, copiarTexto: false);
-}
+/// Instagram y Facebook ignoran, por política propia, el texto que llega
+/// en el intent para compartir (a diferencia de WhatsApp, que sí lo usa),
+/// así que además hay que copiarlo al portapapeles para que se pueda pegar.
+bool ignoraTextoPrellenado(String plataforma) =>
+    plataforma.toLowerCase() != 'whatsapp';
 
-/// Comparte un post de Redes Sociales, intentando abrir la app de su
-/// plataforma directamente cuando es posible.
+/// Comparte un post de Redes Sociales, abriendo la app de su plataforma
+/// directo cuando es posible (WhatsApp/Instagram/Facebook), con las fotos
+/// adjuntas. Si la app no está instalada o algo falla, cae al selector del
+/// sistema.
 class CompartirService {
-  CompartirService({FotoService? fotoService})
-      : _fotos = fotoService ?? FotoService();
+  CompartirService({FotoService? fotoService, CompartirNativo? nativo})
+      : _fotos = fotoService ?? FotoService(),
+        _nativo = nativo ?? CompartirNativo();
 
   final FotoService _fotos;
+  final CompartirNativo _nativo;
 
   /// Rutas reales de las fotos del post que todavía existen en disco.
   Future<List<XFile>> archivosDePost(PostRedes post) async {
@@ -60,16 +57,24 @@ class CompartirService {
   Future<ModoCompartir> compartirPost(PostRedes post) async {
     final texto = post.getContenidoFormateado();
     final archivos = await archivosDePost(post);
-    final plan = planificarCompartir(
-      post.plataforma,
-      conFotos: archivos.isNotEmpty,
-    );
+    final paquete = paqueteParaPlataforma(post.plataforma);
 
-    if (plan.intentarWhatsApp && await _abrirWhatsApp(texto)) {
-      return ModoCompartir.appDirecta;
-    }
-
-    if (plan.copiarTexto) {
+    if (paquete != null) {
+      final rutas = await _copiarACache(archivos);
+      final abierta = await _nativo.compartirEnApp(
+        rutas: rutas,
+        texto: texto,
+        paquete: paquete,
+      );
+      if (abierta) {
+        if (ignoraTextoPrellenado(post.plataforma)) {
+          await Clipboard.setData(ClipboardData(text: texto));
+          return ModoCompartir.textoPegar;
+        }
+        return ModoCompartir.appDirecta;
+      }
+      // La app no está instalada o falló: se copia el texto igual, porque
+      // el selector genérico que sigue no sabe a qué app apuntaba.
       await Clipboard.setData(ClipboardData(text: texto));
     }
 
@@ -83,22 +88,34 @@ class CompartirService {
       return ModoCompartir.fallo;
     }
 
-    return plan.copiarTexto
+    return paquete != null
         ? ModoCompartir.textoPegar
         : ModoCompartir.hojaSistema;
   }
 
-  Future<bool> _abrirWhatsApp(String texto) async {
-    try {
-      final uri = Uri.parse(
-        'whatsapp://send?text=${Uri.encodeComponent(texto)}',
-      );
-      if (!await canLaunchUrl(uri)) {
-        return false;
-      }
-      return launchUrl(uri, mode: LaunchMode.externalApplication);
-    } on PlatformException {
-      return false;
+  /// Copia las fotos a compartir a la carpeta de caché servida por el
+  /// FileProvider nativo (ver MainActivity.kt y res/xml/file_paths.xml) —
+  /// el intent nativo solo puede adjuntar archivos desde ahí.
+  Future<List<String>> _copiarACache(List<XFile> archivos) async {
+    if (archivos.isEmpty) {
+      return [];
     }
+    final base = await getTemporaryDirectory();
+    final dir = Directory(p.join(base.path, 'compartir'));
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+    final rutas = <String>[];
+    for (var i = 0; i < archivos.length; i++) {
+      final origen = File(archivos[i].path);
+      final destino = p.join(
+        dir.path,
+        'foto_${DateTime.now().microsecondsSinceEpoch}_$i'
+        '${p.extension(origen.path)}',
+      );
+      await origen.copy(destino);
+      rutas.add(destino);
+    }
+    return rutas;
   }
 }

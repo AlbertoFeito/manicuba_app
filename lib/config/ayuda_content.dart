@@ -86,7 +86,8 @@ class Ayudas {
       'Toca los chips sugeridos para añadir emojis y hashtags al instante.',
       'Puedes agregar fotos al post (de la cámara, la galería del teléfono o tu Galería de trabajos) desde el formulario.',
       'En cada post: Copiar (al portapapeles), Compartir, Editar, marcar Publicado/Pendiente o Eliminar.',
-      'Compartir abre WhatsApp directo con el texto listo. Instagram y Facebook no permiten rellenar el texto: la app lo copia al portapapeles para que solo tengas que pegarlo.',
+      'Compartir abre WhatsApp, Instagram o Facebook directo, según la plataforma que elegiste al crear el post, con las fotos adjuntas.',
+      'Instagram y Facebook no permiten rellenar el texto por política de esas apps: Manicuba lo copia al portapapeles para que solo tengas que pegarlo.',
       'Usa los filtros Todos / Pendientes / Publicados para organizar tus posts.',
     ],
   );
