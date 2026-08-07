@@ -48,6 +48,16 @@ class FotoService {
     return mapList.map(FotoTrabajo.fromMap).toList();
   }
 
+  /// Devuelve las fotos con esos [ids], en el mismo orden pedido. Ids sin
+  /// foto correspondiente (p. ej. borrada de la Galería) se descartan.
+  Future<List<FotoTrabajo>> obtenerPorIds(List<int> ids) async {
+    if (ids.isEmpty) {
+      return [];
+    }
+    final porId = {for (final f in await obtenerTodas()) f.id: f};
+    return ids.map((id) => porId[id]).whereType<FotoTrabajo>().toList();
+  }
+
   /// Elimina el registro y, si existe, el archivo en disco.
   Future<void> eliminar(FotoTrabajo foto) async {
     if (foto.id != null) {

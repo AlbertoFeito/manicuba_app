@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../config/constants.dart';
 import '../../config/theme.dart';
+import '../../models/foto_trabajo.dart';
 import '../../models/post_redes.dart';
+import '../../services/foto_service.dart';
 import '../../services/redes_service.dart';
 
 /// Formulario para crear o editar un post de redes sociales con ayudas de
@@ -19,6 +24,8 @@ class PostFormScreen extends StatefulWidget {
 class _PostFormScreenState extends State<PostFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _redesService = RedesService();
+  final _fotoService = FotoService();
+  final _picker = ImagePicker();
 
   final _tituloCtrl = TextEditingController();
   final _contenidoCtrl = TextEditingController();
@@ -28,6 +35,8 @@ class _PostFormScreenState extends State<PostFormScreen> {
   late String _tipo;
   late String _plataforma;
   bool _guardando = false;
+  List<int> _fotoIds = [];
+  List<FotoTrabajo> _fotosSel = [];
 
   bool get _esEdicion => widget.post != null;
 
@@ -41,6 +50,16 @@ class _PostFormScreenState extends State<PostFormScreen> {
     _hashtagsCtrl.text = p?.hashtags ?? '';
     _tipo = _coincidir(AppConstants.tiposPost, p?.tipo);
     _plataforma = _coincidir(AppConstants.plataformasSociales, p?.plataforma);
+    _fotoIds = List.of(p?.listaFotoIds ?? const []);
+    _cargarFotosSel();
+  }
+
+  Future<void> _cargarFotosSel() async {
+    final fotos = await _fotoService.obtenerPorIds(_fotoIds);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _fotosSel = fotos);
   }
 
   // Devuelve el valor de [opciones] que coincide (sin distinguir mayúsculas)
@@ -84,6 +103,189 @@ class _PostFormScreenState extends State<PostFormScreen> {
   List<String> get _hashtagsSugeridos =>
       _redesService.sugerenciasHashtags(_contenidoCtrl.text);
 
+  void _quitarFoto(int id) {
+    setState(() {
+      _fotoIds = _fotoIds.where((i) => i != id).toList();
+      _fotosSel = _fotosSel.where((f) => f.id != id).toList();
+    });
+  }
+
+  void _abrirSelectorFotos() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Tomar foto'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _agregarFotoDispositivo(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Elegir de la galería del teléfono'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _agregarFotoDispositivo(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.collections),
+              title: const Text('Elegir de la Galería de trabajos'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _elegirDeGaleriaTrabajos();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _agregarFotoDispositivo(ImageSource source) async {
+    try {
+      final imagen = await _picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1600,
+      );
+      if (imagen == null) {
+        return;
+      }
+      final foto = await _fotoService.guardarDesdeArchivo(File(imagen.path));
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _fotoIds = [..._fotoIds, foto.id!];
+        _fotosSel = [..._fotosSel, foto];
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo agregar la foto')),
+        );
+      }
+    }
+  }
+
+  Future<void> _elegirDeGaleriaTrabajos() async {
+    final todas = await _fotoService.obtenerTodas();
+    if (!mounted) {
+      return;
+    }
+    if (todas.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aún no tienes fotos en la Galería de trabajos'),
+        ),
+      );
+      return;
+    }
+    final resultado = await showModalBottomSheet<List<int>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        var seleccion = List.of(_fotoIds);
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) => SafeArea(
+            child: SizedBox(
+              height: MediaQuery.of(ctx).size.height * 0.7,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Elegir fotos',
+                      style: Theme.of(ctx).textTheme.titleMedium,
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: todas.length,
+                      itemBuilder: (context, index) {
+                        final foto = todas[index];
+                        final marcada = seleccion.contains(foto.id);
+                        return GestureDetector(
+                          key: ValueKey('foto_galeria_${foto.id}'),
+                          onTap: () => setSheetState(() {
+                            seleccion = marcada
+                                ? seleccion.where((i) => i != foto.id).toList()
+                                : [...seleccion, foto.id!];
+                          }),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: _miniaturaFoto(foto),
+                              ),
+                              if (marcada)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor
+                                        .withOpacity(0.4),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Align(
+                                    alignment: Alignment.topRight,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(seleccion),
+                      child: const Text('Listo'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (resultado == null) {
+      return;
+    }
+    setState(() => _fotoIds = resultado);
+    await _cargarFotosSel();
+  }
+
+  Widget _miniaturaFoto(FotoTrabajo foto) {
+    return File(foto.rutaFoto).existsSync()
+        ? Image.file(File(foto.rutaFoto), fit: BoxFit.cover)
+        : Container(
+            color: Colors.grey[200],
+            child: const Icon(Icons.broken_image),
+          );
+  }
+
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -99,6 +301,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
       hashtags:
           _hashtagsCtrl.text.trim().isEmpty ? null : _hashtagsCtrl.text.trim(),
       tipo: _tipo.toLowerCase(),
+      fotoIds: PostRedes.fotoIdsDesdeLista(_fotoIds),
       plataforma: _plataforma.toLowerCase(),
       fechaCreacion: anterior?.fechaCreacion ?? DateTime.now(),
       fechaProgramada: anterior?.fechaProgramada,
@@ -240,6 +443,8 @@ class _PostFormScreenState extends State<PostFormScreen> {
               _agregarHashtag,
             ),
             const SizedBox(height: 24),
+            _buildFotosSection(),
+            const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _guardando ? null : _guardar,
               icon: _guardando
@@ -254,6 +459,72 @@ class _PostFormScreenState extends State<PostFormScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFotosSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Fotos del post', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        if (_fotosSel.isEmpty)
+          Text(
+            'Sin fotos (opcional)',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+          )
+        else
+          SizedBox(
+            height: 88,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _fotosSel.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final foto = _fotosSel[index];
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: _miniaturaFoto(foto),
+                      ),
+                    ),
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: InkWell(
+                        onTap: () => _quitarFoto(foto.id!),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _abrirSelectorFotos,
+          icon: const Icon(Icons.add_photo_alternate),
+          label: const Text('Agregar fotos'),
+        ),
+      ],
     );
   }
 

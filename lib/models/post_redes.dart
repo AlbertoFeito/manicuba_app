@@ -41,6 +41,24 @@ class PostRedes {
     return formatted;
   }
 
+  /// IDs de las fotos asociadas al post, en el orden guardado.
+  List<int> get listaFotoIds {
+    if (fotoIds == null || fotoIds!.trim().isEmpty) {
+      return [];
+    }
+    return fotoIds!
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList();
+  }
+
+  /// Serializa [ids] para guardarlos en [fotoIds]. Devuelve `null` (no
+  /// cadena vacía) cuando no hay fotos, para que el campo quede NULL.
+  static String? fotoIdsDesdeLista(List<int> ids) {
+    return ids.isEmpty ? null : ids.join(',');
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
