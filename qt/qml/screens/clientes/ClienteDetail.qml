@@ -24,6 +24,7 @@ Page {
 
     header: ToolBar {
         Material.background: Theme.primary
+        background: Rectangle { color: Theme.primary }
         RowLayout {
             anchors.fill: parent
             ToolButton { text: "‹"; font.pixelSize: 24; onClicked: page.StackView.view.pop() }
@@ -147,8 +148,12 @@ Page {
         property string texto: ""
         Layout.fillWidth: true
         implicitHeight: 60
-        Material.background: Theme.surface
-        Material.elevation: 1
+        background: Rectangle {
+            color: Theme.surface
+            radius: Theme.radius
+            border.color: Qt.rgba(0, 0, 0, 0.08)
+            border.width: 1
+        }
         contentItem: ColumnLayout {
             spacing: 2
             Text { text: icono; font.pixelSize: 20; Layout.alignment: Qt.AlignHCenter }

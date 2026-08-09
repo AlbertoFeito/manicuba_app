@@ -113,8 +113,8 @@ Item {
                 Button {
                     Layout.fillWidth: true
                     text: "Activar licencia"
-                    Material.background: Theme.primary
                     Material.foreground: "white"
+                    background: Rectangle { color: Theme.primary; radius: 6 }
                     onClicked: {
                         if (Licencia.activar(campoCodigo.text)) {
                             errorMsg.visible = false

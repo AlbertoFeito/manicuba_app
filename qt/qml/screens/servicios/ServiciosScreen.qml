@@ -76,6 +76,7 @@ Item {
                 font.pixelSize: 26
                 Material.background: Theme.primary
                 Material.foreground: "white"
+                background: Rectangle { radius: width / 2; color: Theme.primary }
                 onClicked: stack.push(formComp, {})
             }
         }

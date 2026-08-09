@@ -46,12 +46,17 @@ qt_add_qml_module(manicuba
         qml/components/SectionHeader.qml
         qml/components/EstadoBadge.qml
         qml/components/EmptyState.qml
+        qml/components/DonutChart.qml
+        qml/components/LineChartMini.qml
         qml/screens/HomeScreen.qml
         qml/screens/clientes/ClientesScreen.qml
         qml/screens/clientes/ClienteForm.qml
         qml/screens/clientes/ClienteDetail.qml
         qml/screens/servicios/ServiciosScreen.qml
         qml/screens/servicios/ServicioForm.qml
+        qml/screens/finanzas/FinanzasScreen.qml
+        qml/screens/finanzas/IngresoForm.qml
+        qml/screens/finanzas/GastoForm.qml
         qml/screens/agenda/AgendaScreen.qml
         qml/screens/agenda/CitaForm.qml
         qml/screens/agenda/HistorialScreen.qml

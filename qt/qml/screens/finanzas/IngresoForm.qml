@@ -4,11 +4,17 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import ManiCuba
 
-// Alta/edición de servicio. Portado de lib/screens/servicios/servicio_form_screen.dart.
+// Alta/edición de ingreso manual. Portado de
+// lib/screens/finanzas/ingreso_form_screen.dart.
 Page {
     id: page
-    property var servicio: ({})
-    readonly property bool esEdicion: servicio && servicio.id !== undefined
+    property var ingreso: ({})
+    readonly property bool esEdicion: ingreso && ingreso.id !== undefined
+
+    function fechaInicial() {
+        return page.ingreso.fecha ? String(page.ingreso.fecha).substring(0, 10)
+                                  : Qt.formatDate(new Date(), "yyyy-MM-dd")
+    }
 
     header: ToolBar {
         Material.background: Theme.primary
@@ -17,7 +23,7 @@ Page {
             anchors.fill: parent
             ToolButton { text: "‹"; font.pixelSize: 24; onClicked: page.StackView.view.pop() }
             Label {
-                text: page.esEdicion ? "Editar servicio" : "Nuevo servicio"
+                text: page.esEdicion ? "Editar ingreso" : "Nuevo ingreso"
                 font.pixelSize: 18; font.bold: true; color: "white"
                 Layout.fillWidth: true
             }
@@ -42,41 +48,44 @@ Page {
             y: Theme.padding
             spacing: Theme.padding
 
-            Text { text: "Nombre *"; font.pixelSize: 13; color: Theme.textSecondary }
+            Text { text: "Monto *"; font.pixelSize: 13; color: Theme.textSecondary }
             TextField {
-                id: fNombre
+                id: fMonto
                 Layout.fillWidth: true
-                text: page.servicio.nombre || ""
-                Material.accent: Theme.primary
-            }
-
-            Text { text: "Precio *"; font.pixelSize: 13; color: Theme.textSecondary }
-            TextField {
-                id: fPrecio
-                Layout.fillWidth: true
-                text: page.servicio.precio !== undefined ? String(page.servicio.precio) : ""
+                text: page.ingreso.monto !== undefined ? String(page.ingreso.monto) : ""
                 placeholderText: "0.00"
                 inputMethodHints: Qt.ImhFormattedNumbersOnly
                 validator: DoubleValidator { bottom: 0; decimals: 2; notation: DoubleValidator.StandardNotation }
                 Material.accent: Theme.primary
             }
 
-            Text { text: "Duración (minutos) *"; font.pixelSize: 13; color: Theme.textSecondary }
-            TextField {
-                id: fDuracion
+            Text { text: "Método de pago"; font.pixelSize: 13; color: Theme.textSecondary }
+            ComboBox {
+                id: cbMetodo
                 Layout.fillWidth: true
-                text: page.servicio.duracionMinutos !== undefined ? String(page.servicio.duracionMinutos) : "30"
-                inputMethodHints: Qt.ImhDigitsOnly
-                validator: IntValidator { bottom: 1; top: 600 }
+                model: AppConfig.metodosPago
+                Material.accent: Theme.primary
+                Component.onCompleted: {
+                    if (page.ingreso.metodo)
+                        currentIndex = Math.max(0, model.indexOf(page.ingreso.metodo))
+                }
+            }
+
+            Text { text: "Fecha"; font.pixelSize: 13; color: Theme.textSecondary }
+            TextField {
+                id: fFecha
+                Layout.fillWidth: true
+                text: page.fechaInicial()
+                placeholderText: "yyyy-MM-dd"
                 Material.accent: Theme.primary
             }
 
-            Text { text: "Descripción"; font.pixelSize: 13; color: Theme.textSecondary }
+            Text { text: "Notas"; font.pixelSize: 13; color: Theme.textSecondary }
             TextArea {
-                id: fDescripcion
+                id: fNotas
                 Layout.fillWidth: true
-                Layout.preferredHeight: 90
-                text: page.servicio.descripcion || ""
+                Layout.preferredHeight: 80
+                text: page.ingreso.notas || ""
                 wrapMode: TextArea.Wrap
                 Material.accent: Theme.primary
             }
@@ -84,13 +93,14 @@ Page {
             Text {
                 id: error
                 visible: false
-                text: "Nombre, precio y duración son obligatorios."
+                text: "Ingresa un monto válido y una fecha (yyyy-MM-dd)."
                 color: Theme.error; font.pixelSize: 13; Layout.fillWidth: true
+                wrapMode: Text.WordWrap
             }
 
             Button {
                 Layout.fillWidth: true
-                text: page.esEdicion ? "Guardar cambios" : "Crear servicio"
+                text: page.esEdicion ? "Guardar cambios" : "Registrar ingreso"
                 Material.background: Theme.primary
                 Material.foreground: "white"
                 background: Rectangle { color: Theme.primary; radius: 6 }
@@ -100,23 +110,22 @@ Page {
     }
 
     function guardar() {
-        var precio = parseFloat(fPrecio.text)
-        var dur = parseInt(fDuracion.text)
-        if (fNombre.text.trim().length === 0 || isNaN(precio) || isNaN(dur) || dur <= 0) {
+        var monto = parseFloat(fMonto.text)
+        if (isNaN(monto) || monto <= 0 || isNaN(Date.parse(fFecha.text.trim() + "T12:00:00"))) {
             error.visible = true
             return
         }
         var datos = {
-            nombre: fNombre.text.trim(),
-            precio: precio,
-            duracionMinutos: dur,
-            descripcion: fDescripcion.text.trim()
+            monto: monto,
+            metodo: AppConfig.metodosPago[cbMetodo.currentIndex],
+            fecha: fFecha.text.trim() + "T12:00:00",
+            notas: fNotas.text.trim()
         }
         if (page.esEdicion) {
-            datos.id = page.servicio.id
-            Servicios.actualizar(datos)
+            datos.id = page.ingreso.id
+            Finanzas.actualizarIngreso(datos)
         } else {
-            Servicios.crear(datos)
+            Finanzas.registrarIngreso(datos)
         }
         page.StackView.view.pop()
     }
@@ -125,11 +134,11 @@ Page {
         id: confirmar
         anchors.centerIn: parent
         modal: true
-        title: "Eliminar servicio"
+        title: "Eliminar ingreso"
         standardButtons: Dialog.Cancel | Dialog.Yes
-        Label { text: "¿Eliminar este servicio del catálogo?" }
+        Label { text: "¿Eliminar este ingreso?" }
         onAccepted: {
-            Servicios.eliminar(page.servicio.id)
+            Finanzas.eliminarIngreso(page.ingreso.id)
             page.StackView.view.pop()
         }
     }

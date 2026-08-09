@@ -99,14 +99,13 @@ Item {
                 }
                 AccionRapida {
                     Layout.fillWidth: true
-                    icono: "💅"; texto: "Servicios"
+                    icono: "💰"; texto: "Finanzas"
                     onClicked: root.irA(3)
                 }
                 AccionRapida {
                     Layout.fillWidth: true
-                    icono: "🔑"; texto: "Licencia: " + (Licencia.estadoTipo === "activa"
-                        ? "activa" : Licencia.diasRestantes + "d")
-                    onClicked: proximamente.open()
+                    icono: "💅"; texto: "Servicios"
+                    onClicked: root.irA(4)
                 }
             }
         }
@@ -161,8 +160,12 @@ Item {
         property string icono: ""
         property string texto: ""
         implicitHeight: 72
-        Material.background: Theme.surface
-        Material.elevation: 1
+        background: Rectangle {
+            color: Theme.surface
+            radius: Theme.radius
+            border.color: Qt.rgba(0, 0, 0, 0.08)
+            border.width: 1
+        }
         contentItem: ColumnLayout {
             spacing: 4
             Text {

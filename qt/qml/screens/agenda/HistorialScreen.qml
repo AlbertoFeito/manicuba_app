@@ -16,6 +16,7 @@ Page {
 
     header: ToolBar {
         Material.background: Theme.primary
+        background: Rectangle { color: Theme.primary }
         RowLayout {
             anchors.fill: parent
             ToolButton { text: "‹"; font.pixelSize: 24; onClicked: page.StackView.view.pop() }

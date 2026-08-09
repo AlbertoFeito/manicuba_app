@@ -7,6 +7,7 @@ import ManiCuba
 import "screens"
 import "screens/clientes"
 import "screens/servicios"
+import "screens/finanzas"
 import "screens/agenda"
 
 ApplicationWindow {
@@ -29,11 +30,13 @@ ApplicationWindow {
         { icono: "🏠", texto: "Inicio" },
         { icono: "📅", texto: "Agenda" },
         { icono: "👥", texto: "Clientes" },
+        { icono: "💰", texto: "Finanzas" },
         { icono: "💅", texto: "Servicios" }
     ]
 
     header: ToolBar {
         Material.background: Theme.primary
+        background: Rectangle { color: Theme.primary }
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: Theme.padding
@@ -121,6 +124,7 @@ ApplicationWindow {
                 }
                 AgendaScreen { id: agendaTab }
                 ClientesScreen {}
+                FinanzasScreen {}
                 ServiciosScreen {}
             }
         }

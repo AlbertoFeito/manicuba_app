@@ -2,6 +2,8 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
+#include <QQuickWindow>
+#include <QTimer>
 
 #include "config/AppConfig.h"
 #include "db/Database.h"
@@ -63,6 +65,19 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty() || !creado) {
         qCritical("No se pudo cargar la interfaz QML.");
         return -1;
+    }
+
+    // Herramienta de desarrollo: MANICUBA_SHOT=/ruta.png captura la ventana y sale.
+    const QByteArray shot = qgetenv("MANICUBA_SHOT");
+    if (!shot.isEmpty()) {
+        if (auto *win = qobject_cast<QQuickWindow *>(engine.rootObjects().first())) {
+            QTimer::singleShot(900, win, [win, shot]() {
+                const QImage img = win->grabWindow();
+                if (!img.isNull())
+                    img.save(QString::fromUtf8(shot));
+                QCoreApplication::quit();
+            });
+        }
     }
 
     return app.exec();

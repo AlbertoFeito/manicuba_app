@@ -12,6 +12,7 @@ Page {
 
     header: ToolBar {
         Material.background: Theme.primary
+        background: Rectangle { color: Theme.primary }
         RowLayout {
             anchors.fill: parent
             ToolButton { text: "‹"; font.pixelSize: 24; onClicked: page.StackView.view.pop() }
@@ -61,6 +62,7 @@ Page {
                 text: page.esEdicion ? "Guardar cambios" : "Crear cliente"
                 Material.background: Theme.primary
                 Material.foreground: "white"
+                background: Rectangle { color: Theme.primary; radius: 6 }
                 onClicked: page.guardar()
             }
         }
