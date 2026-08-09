@@ -19,6 +19,7 @@ qt_add_executable(manicuba
     src/services/ClienteService.cpp
     src/services/ServicioService.cpp
     src/services/FinanzasService.cpp
+    src/services/InventarioService.cpp
     src/services/CitaService.cpp
 )
 
@@ -57,6 +58,8 @@ qt_add_qml_module(manicuba
         qml/screens/finanzas/FinanzasScreen.qml
         qml/screens/finanzas/IngresoForm.qml
         qml/screens/finanzas/GastoForm.qml
+        qml/screens/inventario/InventarioScreen.qml
+        qml/screens/inventario/ProductoForm.qml
         qml/screens/agenda/AgendaScreen.qml
         qml/screens/agenda/CitaForm.qml
         qml/screens/agenda/HistorialScreen.qml

@@ -11,6 +11,7 @@
 #include "services/CitaService.h"
 #include "services/ClienteService.h"
 #include "services/FinanzasService.h"
+#include "services/InventarioService.h"
 #include "services/LicenciaService.h"
 #include "services/ServicioService.h"
 
@@ -38,6 +39,7 @@ int main(int argc, char *argv[])
     auto *clientes = new ClienteService(&app);
     auto *servicios = new ServicioService(&app);
     auto *finanzas = new FinanzasService(&app);
+    auto *inventario = new InventarioService(&app);
     auto *citas = new CitaService(finanzas, clientes, &app);
 
     licencia->refrescar();
@@ -50,6 +52,7 @@ int main(int argc, char *argv[])
     ctx->setContextProperty(QStringLiteral("Clientes"), clientes);
     ctx->setContextProperty(QStringLiteral("Servicios"), servicios);
     ctx->setContextProperty(QStringLiteral("Finanzas"), finanzas);
+    ctx->setContextProperty(QStringLiteral("Inventario"), inventario);
     ctx->setContextProperty(QStringLiteral("Citas"), citas);
 
     bool creado = false;

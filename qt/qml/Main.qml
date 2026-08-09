@@ -8,6 +8,7 @@ import "screens"
 import "screens/clientes"
 import "screens/servicios"
 import "screens/finanzas"
+import "screens/inventario"
 import "screens/agenda"
 
 ApplicationWindow {
@@ -31,7 +32,8 @@ ApplicationWindow {
         { icono: "📅", texto: "Agenda" },
         { icono: "👥", texto: "Clientes" },
         { icono: "💰", texto: "Finanzas" },
-        { icono: "💅", texto: "Servicios" }
+        { icono: "💅", texto: "Servicios" },
+        { icono: "📦", texto: "Inventario" }
     ]
 
     header: ToolBar {
@@ -126,6 +128,7 @@ ApplicationWindow {
                 ClientesScreen {}
                 FinanzasScreen {}
                 ServiciosScreen {}
+                InventarioScreen {}
             }
         }
     }
