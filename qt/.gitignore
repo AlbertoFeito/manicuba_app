@@ -1,0 +1,10 @@
+# Artefactos de compilación
+build/
+*.o
+*.obj
+moc_*.cpp
+qrc_*.cpp
+
+# Datos locales / usuario
+*.db
+*.db-journal
