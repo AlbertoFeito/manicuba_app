@@ -9,6 +9,8 @@ import "screens/clientes"
 import "screens/servicios"
 import "screens/finanzas"
 import "screens/inventario"
+import "screens/redes"
+import "screens/galeria"
 import "screens/agenda"
 
 ApplicationWindow {
@@ -18,23 +20,29 @@ ApplicationWindow {
     visible: true
     title: "ManiCuba 💅"
 
-    Material.theme: Material.Light
+    Material.theme: Theme.dark ? Material.Dark : Material.Light
     Material.primary: Theme.primary
     Material.accent: Theme.primary
+    color: Theme.background
 
     // Navegación adaptativa: panel lateral en pantallas anchas, barra inferior
     // en pantallas estrechas (móvil).
     readonly property bool anchoEscritorio: width >= 900
     property int navIndex: 0
 
-    readonly property var navItems: [
-        { icono: "🏠", texto: "Inicio" },
-        { icono: "📅", texto: "Agenda" },
-        { icono: "👥", texto: "Clientes" },
-        { icono: "💰", texto: "Finanzas" },
-        { icono: "💅", texto: "Servicios" },
-        { icono: "📦", texto: "Inventario" }
+    // Orden de las pantallas en el StackLayout (índice = posición).
+    readonly property var pantallas: [
+        { icono: "🏠", texto: "Inicio" },      // 0
+        { icono: "📅", texto: "Agenda" },      // 1
+        { icono: "👥", texto: "Clientes" },    // 2
+        { icono: "💰", texto: "Finanzas" },    // 3
+        { icono: "💅", texto: "Servicios" },   // 4
+        { icono: "📦", texto: "Inventario" },  // 5
+        { icono: "📣", texto: "Redes" },       // 6
+        { icono: "📸", texto: "Galería" }      // 7
     ]
+    // Pestañas de la barra inferior (móvil): un subconjunto curado.
+    readonly property var tabsMovil: [0, 1, 2, 3, 6]
 
     header: ToolBar {
         Material.background: Theme.primary
@@ -44,11 +52,16 @@ ApplicationWindow {
             anchors.leftMargin: Theme.padding
             anchors.rightMargin: Theme.paddingSmall
             Label {
-                text: win.navItems[win.navIndex].texto
+                text: win.pantallas[win.navIndex].texto
                 font.pixelSize: 20
                 font.bold: true
                 color: "white"
                 Layout.fillWidth: true
+            }
+            ToolButton {
+                text: Theme.dark ? "☀️" : "🌙"
+                font.pixelSize: 18
+                onClicked: Theme.toggle()
             }
             ToolButton {
                 text: "⋮"
@@ -57,12 +70,16 @@ ApplicationWindow {
                 Menu {
                     id: menu
                     y: parent.height
+                    MenuItem { text: "💅  Servicios"; onTriggered: win.navIndex = 4 }
+                    MenuItem { text: "📦  Inventario"; onTriggered: win.navIndex = 5 }
+                    MenuItem { text: "📸  Galería"; onTriggered: win.navIndex = 7 }
+                    MenuSeparator {}
                     MenuItem {
-                        text: "Historial de citas"
+                        text: "🗂  Historial de citas"
                         onTriggered: { win.navIndex = 1; agendaTab.abrirHistorial() }
                     }
                     MenuItem {
-                        text: "Licencia"
+                        text: "🔑  Licencia"
                         onTriggered: gate.mostrarPanel = true
                     }
                 }
@@ -92,7 +109,7 @@ ApplicationWindow {
                     anchors.topMargin: Theme.padding
                     spacing: 4
                     Repeater {
-                        model: win.navItems
+                        model: win.pantallas
                         delegate: ItemDelegate {
                             required property int index
                             required property var modelData
@@ -129,6 +146,8 @@ ApplicationWindow {
                 FinanzasScreen {}
                 ServiciosScreen {}
                 InventarioScreen {}
+                RedesScreen {}
+                GaleriaScreen {}
             }
         }
     }
@@ -137,25 +156,26 @@ ApplicationWindow {
     footer: TabBar {
         visible: !win.anchoEscritorio
         height: visible ? implicitHeight : 0
-        currentIndex: win.navIndex
+        currentIndex: Math.max(0, win.tabsMovil.indexOf(win.navIndex))
         Material.background: Theme.surface
         Repeater {
-            model: win.navItems
+            model: win.tabsMovil
             delegate: TabButton {
-                required property var modelData
-                required property int index
-                onClicked: win.navIndex = index
+                required property var modelData   // índice de pantalla
+                readonly property var info: win.pantallas[modelData]
+                readonly property bool activo: win.navIndex === modelData
+                onClicked: win.navIndex = modelData
                 contentItem: ColumnLayout {
                     spacing: 2
                     Text {
-                        text: modelData.icono
+                        text: info.icono
                         font.pixelSize: 18
                         Layout.alignment: Qt.AlignHCenter
                     }
                     Text {
-                        text: modelData.texto
+                        text: info.texto
                         font.pixelSize: 11
-                        color: win.navIndex === index ? Theme.primary : Theme.textSecondary
+                        color: activo ? Theme.primary : Theme.textSecondary
                         Layout.alignment: Qt.AlignHCenter
                     }
                 }

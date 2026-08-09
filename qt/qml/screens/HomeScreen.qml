@@ -132,6 +132,8 @@ Item {
         property string valor: ""
         property color acento: Theme.primary
         implicitHeight: 96
+        color: Qt.rgba(acento.r, acento.g, acento.b, Theme.dark ? 0.18 : 0.10)
+        border.color: Qt.rgba(acento.r, acento.g, acento.b, 0.35)
         ColumnLayout {
             width: parent.width
             spacing: 4

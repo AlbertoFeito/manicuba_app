@@ -6,13 +6,16 @@
 #include <QTimer>
 
 #include "config/AppConfig.h"
+#include "config/ThemeController.h"
 #include "db/Database.h"
 #include "services/CategoriaService.h"
 #include "services/CitaService.h"
 #include "services/ClienteService.h"
 #include "services/FinanzasService.h"
+#include "services/FotoService.h"
 #include "services/InventarioService.h"
 #include "services/LicenciaService.h"
+#include "services/RedesService.h"
 #include "services/ServicioService.h"
 
 int main(int argc, char *argv[])
@@ -34,12 +37,15 @@ int main(int argc, char *argv[])
 
     // Servicios (el orden importa: Citas depende de Finanzas y Clientes).
     auto *appConfig = new AppConfig(&app);
+    auto *theme = new ThemeController(&app);
     auto *licencia = new LicenciaService(&app);
     auto *categorias = new CategoriaService(&app);
     auto *clientes = new ClienteService(&app);
     auto *servicios = new ServicioService(&app);
     auto *finanzas = new FinanzasService(&app);
     auto *inventario = new InventarioService(&app);
+    auto *redes = new RedesService(&app);
+    auto *fotos = new FotoService(&app);
     auto *citas = new CitaService(finanzas, clientes, &app);
 
     licencia->refrescar();
@@ -47,12 +53,15 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     QQmlContext *ctx = engine.rootContext();
     ctx->setContextProperty(QStringLiteral("AppConfig"), appConfig);
+    ctx->setContextProperty(QStringLiteral("Theme"), theme);
     ctx->setContextProperty(QStringLiteral("Licencia"), licencia);
     ctx->setContextProperty(QStringLiteral("Categorias"), categorias);
     ctx->setContextProperty(QStringLiteral("Clientes"), clientes);
     ctx->setContextProperty(QStringLiteral("Servicios"), servicios);
     ctx->setContextProperty(QStringLiteral("Finanzas"), finanzas);
     ctx->setContextProperty(QStringLiteral("Inventario"), inventario);
+    ctx->setContextProperty(QStringLiteral("Redes"), redes);
+    ctx->setContextProperty(QStringLiteral("Fotos"), fotos);
     ctx->setContextProperty(QStringLiteral("Citas"), citas);
 
     bool creado = false;

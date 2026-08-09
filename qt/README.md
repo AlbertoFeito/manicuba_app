@@ -4,17 +4,18 @@ Reescritura de la app ManiCuba con **Qt 6 (Qt Quick / QML + C++)**, pensada para
 correr en **escritorio y móvil** con la misma base de código. La app Flutter
 original se conserva en la raíz del repositorio como referencia.
 
-Esta primera entrega incluye los **fundamentos + módulos base**:
+Incluye:
 
 - Base de datos SQLite con las **9 tablas** del esquema original y los servicios
   sembrados por defecto (compatible con los datos de la app Flutter).
 - **Licencia por dispositivo** con prueba de 15 días, portada 1:1 (mismo
   HMAC-SHA256 y mismo alfabeto base32 → las licencias emitidas siguen siendo válidas).
-- Navegación responsiva (barra inferior en móvil, panel lateral en escritorio) y
-  4 módulos funcionando: **Inicio, Agenda, Clientes y Servicios**.
+- Navegación responsiva (barra inferior en móvil, panel lateral en escritorio).
+- **Modo claro/oscuro** con interruptor (☀️/🌙) y persistencia.
+- Los 8 módulos: **Inicio, Agenda, Clientes, Servicios, Finanzas** (con gráficos
+  dibujados en Canvas), **Inventario, Redes Sociales y Galería**.
 
-Pendiente para siguientes entregas: **Finanzas** (con gráficos), **Inventario**,
-**Redes Sociales** y **Galería**, más el empaquetado para **Android**.
+Pendiente: el empaquetado para **Android** (SDK/NDK).
 
 ## Arquitectura
 
@@ -47,6 +48,7 @@ En Debian/Ubuntu:
 sudo apt-get install qt6-base-dev qt6-declarative-dev \
   qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts \
   qml6-module-qtquick-templates qml6-module-qtquick-window \
+  qml6-module-qtquick-dialogs qml6-module-qtcore \
   libqt6sql6-sqlite qt6-declarative-dev-tools
 ```
 

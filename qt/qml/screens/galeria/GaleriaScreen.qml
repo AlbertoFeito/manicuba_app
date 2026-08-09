@@ -1,0 +1,124 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import ManiCuba
+
+// Galería de fotos de trabajo. Portado de
+// lib/screens/galeria/galeria_screen.dart. En escritorio se eligen imágenes con
+// el selector de archivos; se copian al almacenamiento de la app.
+Item {
+    id: root
+
+    property var fotos: []
+    function refrescar() { fotos = Fotos.obtenerTodas() }
+    Component.onCompleted: refrescar()
+    Connections { target: Fotos; function onCambiado() { root.refrescar() } }
+
+    FileDialog {
+        id: selector
+        title: "Elegir imagen"
+        nameFilters: ["Imágenes (*.png *.jpg *.jpeg *.webp *.bmp)"]
+        onAccepted: Fotos.guardarDesdeArchivo(selectedFile)
+    }
+
+    GridView {
+        id: grid
+        anchors.fill: parent
+        anchors.margins: Theme.paddingSmall
+        clip: true
+        cellWidth: Math.floor(width / Math.max(2, Math.floor(width / 150)))
+        cellHeight: cellWidth
+        model: root.fotos
+        bottomMargin: 88
+
+        delegate: Item {
+            required property var modelData
+            width: grid.cellWidth
+            height: grid.cellHeight
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 3
+                radius: Theme.radius
+                color: Theme.surfaceAlt
+                clip: true
+                Image {
+                    anchors.fill: parent
+                    source: modelData.url
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: { visor.foto = modelData; visor.open() }
+                }
+            }
+        }
+    }
+
+    EmptyState {
+        anchors.centerIn: parent
+        width: parent.width
+        visible: root.fotos.length === 0
+        icono: "📸"
+        mensaje: "Galería vacía"
+        detalle: "Agrega fotos de tus trabajos con el botón +."
+    }
+
+    RoundButton {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: Theme.paddingLarge
+        text: "+"
+        font.pixelSize: 26
+        Material.foreground: "white"
+        background: Rectangle { radius: width / 2; color: Theme.primary }
+        onClicked: selector.open()
+    }
+
+    // Visor a pantalla completa con opción de eliminar
+    Popup {
+        id: visor
+        property var foto: ({})
+        anchors.centerIn: Overlay.overlay
+        width: parent.width
+        height: parent.height
+        modal: true
+        padding: 0
+        background: Rectangle { color: Qt.rgba(0, 0, 0, 0.92) }
+
+        Image {
+            anchors.fill: parent
+            anchors.margins: Theme.padding
+            source: visor.foto.url || ""
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+        }
+        RowLayout {
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: Theme.padding
+            spacing: Theme.paddingSmall
+            RoundButton {
+                text: "🗑"; font.pixelSize: 18
+                background: Rectangle { radius: width / 2; color: Theme.error }
+                onClicked: { Fotos.eliminar(visor.foto.id); visor.close() }
+            }
+            RoundButton {
+                text: "✕"; font.pixelSize: 18
+                background: Rectangle { radius: width / 2; color: Theme.surface }
+                onClicked: visor.close()
+            }
+        }
+        Text {
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.margins: Theme.paddingLarge
+            visible: visor.foto.fecha !== undefined
+            text: visor.foto.fecha ? Qt.formatDate(new Date(visor.foto.fecha), "dd/MM/yyyy") : ""
+            color: "white"
+            font.pixelSize: 13
+        }
+    }
+}

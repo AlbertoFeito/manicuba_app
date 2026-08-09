@@ -13,7 +13,7 @@ Column {
         text: titulo
         font.pixelSize: 20
         font.bold: true
-        color: Theme.textPrimary
+        color: Theme.primary
     }
     Text {
         text: subtitulo

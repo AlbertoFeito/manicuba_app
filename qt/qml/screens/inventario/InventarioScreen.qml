@@ -177,6 +177,8 @@ Item {
         property color acento: Theme.primary
         Layout.fillWidth: true
         implicitHeight: 88
+        color: Qt.rgba(acento.r, acento.g, acento.b, Theme.dark ? 0.18 : 0.10)
+        border.color: Qt.rgba(acento.r, acento.g, acento.b, 0.35)
         ColumnLayout {
             width: parent.width
             spacing: 2
