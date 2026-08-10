@@ -15,7 +15,7 @@ Incluye:
 - Los 8 módulos: **Inicio, Agenda, Clientes, Servicios, Finanzas** (con gráficos
   dibujados en Canvas), **Inventario, Redes Sociales y Galería**.
 
-Pendiente: el empaquetado para **Android** (SDK/NDK).
+También incluye el empaquetado para **Android** (APK) — ver más abajo.
 
 ## Arquitectura
 
@@ -71,6 +71,31 @@ cmake -S qt -B qt/build -DLICENSE_SECRET="tu-secreto-real"
 
 Si no se define, se usa `manicuba-dev-secret` (solo para desarrollo; la app lo
 advierte en la pantalla de licencia).
+
+## Compilar para Android (APK)
+
+Requiere **Qt for Android** y un **Qt host** de la misma versión, más el **Android
+SDK** (platform-34, build-tools 34) y un **NDK**. Detalle importante: Gradle de
+esta versión de Qt **no funciona con Java 21**; usa **Java 17** para el
+empaquetado.
+
+```bash
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export ANDROID_SDK_ROOT=/ruta/android-sdk
+# (opcional) QT_ANDROID=/ruta/Qt/6.4.2/android_arm64_v8a  QT_HOST=/ruta/Qt/6.4.2/gcc_64
+bash qt/scripts/build-android.sh
+```
+
+El script configura con `qt-cmake`, compila y ejecuta `androiddeployqt`. El APK
+(debug, autofirmado, `arm64-v8a`) queda en:
+
+```
+qt/build-android/android-build/build/outputs/apk/debug/android-build-debug.apk
+```
+
+Paquete `com.albertofeito.manicuba_app`, `minSdk 24` (Android 7.0+). Para otras
+arquitecturas cambia `ABI` (p. ej. `ABI=armeabi-v7a`). El proyecto Android
+(manifest, icono) está en `qt/android/`.
 
 ## Datos
 
