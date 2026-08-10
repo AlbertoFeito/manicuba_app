@@ -48,4 +48,6 @@ public:
     Q_INVOKABLE QString moneda(double valor) const;
     // Etiqueta legible del estado de una cita.
     Q_INVOKABLE QString etiquetaEstado(const QString &estado) const;
+    // Ayuda de una ventana: { titulo, icono, puntos: [..] }.
+    Q_INVOKABLE QVariantMap ayuda(const QString &clave) const;
 };

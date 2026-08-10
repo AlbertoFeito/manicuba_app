@@ -495,11 +495,13 @@ Item {
             ToolButton {
                 visible: mov.editable === true
                 text: "✎"; font.pixelSize: 15
+                Material.foreground: Theme.primary
                 onClicked: editar()
             }
             ToolButton {
                 visible: mov.editable === true
                 text: "🗑"; font.pixelSize: 14
+                Material.foreground: Theme.error
                 onClicked: eliminar()
             }
         }

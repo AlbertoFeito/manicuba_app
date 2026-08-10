@@ -37,6 +37,7 @@ Item {
 
             header: Pane {
                 Material.elevation: 0
+                Material.foreground: Theme.primary
                 RowLayout {
                     anchors.fill: parent
                     ToolButton { text: "‹"; font.pixelSize: 22; onClicked: page.moverDia(-1) }

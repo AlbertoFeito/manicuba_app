@@ -49,6 +49,7 @@ qt_add_qml_module(manicuba
         qml/components/EmptyState.qml
         qml/components/DonutChart.qml
         qml/components/LineChartMini.qml
+        qml/components/AyudaDialog.qml
         qml/screens/HomeScreen.qml
         qml/screens/clientes/ClientesScreen.qml
         qml/screens/clientes/ClienteForm.qml
@@ -76,3 +77,14 @@ target_link_libraries(manicuba PRIVATE
     Qt6::QuickControls2
     Qt6::Sql
 )
+
+# Configuración específica de Android (solo al compilar cruzado para Android).
+if(ANDROID)
+    set_target_properties(manicuba PROPERTIES
+        QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+        QT_ANDROID_MIN_SDK_VERSION 24
+        QT_ANDROID_TARGET_SDK_VERSION 34
+        QT_ANDROID_VERSION_NAME "1.0"
+        QT_ANDROID_VERSION_CODE 1
+    )
+endif()

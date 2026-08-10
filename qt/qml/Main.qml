@@ -43,10 +43,15 @@ ApplicationWindow {
     ]
     // Pestañas de la barra inferior (móvil): un subconjunto curado.
     readonly property var tabsMovil: [0, 1, 2, 3, 6]
+    // Clave de ayuda por pantalla (mismo orden que "pantallas").
+    readonly property var clavesAyuda: [
+        "inicio", "agenda", "clientes", "finanzas", "servicios", "inventario", "redes", "galeria"
+    ]
 
     header: ToolBar {
         Material.background: Theme.primary
         background: Rectangle { color: Theme.primary }
+        Material.foreground: "white"
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: Theme.padding
@@ -57,6 +62,11 @@ ApplicationWindow {
                 font.bold: true
                 color: "white"
                 Layout.fillWidth: true
+            }
+            ToolButton {
+                text: "?"
+                font.pixelSize: 20; font.bold: true
+                onClicked: { ayuda.clave = win.clavesAyuda[win.navIndex]; ayuda.open() }
             }
             ToolButton {
                 text: Theme.dark ? "☀️" : "🌙"
@@ -86,6 +96,8 @@ ApplicationWindow {
             }
         }
     }
+
+    AyudaDialog { id: ayuda }
 
     LicenciaGate {
         id: gate

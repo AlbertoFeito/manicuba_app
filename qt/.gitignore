@@ -1,7 +1,11 @@
 # Artefactos de compilación
 build/
+build-android/
+build*/
 *.o
 *.obj
+*.apk
+*.aab
 moc_*.cpp
 qrc_*.cpp
 

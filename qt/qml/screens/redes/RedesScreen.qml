@@ -137,8 +137,8 @@ Item {
                                 onClicked: Redes.marcarPublicado(modelData.id)
                             }
                             Item { Layout.fillWidth: true }
-                            ToolButton { text: "✎"; font.pixelSize: 15; onClicked: stack.push(formComp, { post: modelData }) }
-                            ToolButton { text: "🗑"; font.pixelSize: 14; onClicked: { page.pendiente = modelData; confirmar.open() } }
+                            ToolButton { text: "✎"; font.pixelSize: 15; Material.foreground: Theme.primary; onClicked: stack.push(formComp, { post: modelData }) }
+                            ToolButton { text: "🗑"; font.pixelSize: 14; Material.foreground: Theme.error; onClicked: { page.pendiente = modelData; confirmar.open() } }
                         }
                     }
                 }

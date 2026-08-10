@@ -120,6 +120,7 @@ Item {
                                         implicitWidth: 34; implicitHeight: 34
                                         text: "−"; font.pixelSize: 18
                                         flat: true
+                                        Material.foreground: Theme.primary
                                         onClicked: Inventario.disminuirStock(modelData.id, 1)
                                     }
                                     Text {
@@ -133,12 +134,14 @@ Item {
                                         implicitWidth: 34; implicitHeight: 34
                                         text: "+"; font.pixelSize: 16
                                         flat: true
+                                        Material.foreground: Theme.primary
                                         onClicked: Inventario.aumentarStock(modelData.id, 1)
                                     }
                                 }
 
                                 ToolButton {
                                     text: "✎"; font.pixelSize: 15
+                                    Material.foreground: Theme.primary
                                     onClicked: stack.push(formComp, { producto: modelData })
                                 }
                             }
