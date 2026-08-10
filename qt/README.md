@@ -97,6 +97,39 @@ Paquete `com.albertofeito.manicuba_app`, `minSdk 24` (Android 7.0+). Para otras
 arquitecturas cambia `ABI` (p. ej. `ABI=armeabi-v7a`). El proyecto Android
 (manifest, icono) está en `qt/android/`.
 
+### Release firmado y AAB (Play Store)
+
+Crea una vez tu keystore (guárdala fuera del repo):
+
+```bash
+keytool -genkeypair -v -keystore manicuba-release.keystore -alias manicuba \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Firma el APK release y el AAB con `androiddeployqt` (tras `qt-cmake` +
+`cmake --build`, con `JAVA_HOME` en Java 17):
+
+```bash
+ADQ=/ruta/Qt/6.4.2/gcc_64/bin/androiddeployqt
+SETTINGS=qt/build-android/android-*-deployment-settings.json
+# APK release firmado
+$ADQ --input $SETTINGS --output qt/build-android/android-build \
+  --android-platform android-34 --gradle --release \
+  --sign manicuba-release.keystore manicuba --storepass *** --keypass ***
+# AAB para Play Store (añade --aab)
+$ADQ --input $SETTINGS --output qt/build-android/android-build \
+  --android-platform android-34 --gradle --aab --release \
+  --sign manicuba-release.keystore manicuba --storepass *** --keypass ***
+```
+
+Salidas: `.../outputs/apk/release/android-build-release-signed.apk` y
+`.../outputs/bundle/release/android-build-release.aab`. Sube el **.aab** a Google
+Play. **Nunca subas la keystore ni las contraseñas al repositorio.**
+
+Para cada nueva versión: incrementa `QT_ANDROID_VERSION_CODE` (en
+`CMakeLists.txt`) y `versionCode` (en `android/AndroidManifest.xml`) y firma con
+la **misma** keystore.
+
 ## Datos
 
 La base de datos se crea en la carpeta de datos de la app
