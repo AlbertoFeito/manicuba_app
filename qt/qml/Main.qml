@@ -4,14 +4,11 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import ManiCuba
 
-import "screens"
-import "screens/clientes"
-import "screens/servicios"
-import "screens/finanzas"
-import "screens/inventario"
-import "screens/redes"
-import "screens/galeria"
-import "screens/agenda"
+// Nota: las pantallas y el diálogo de ayuda NO se importan por tipo aquí a
+// propósito (ver "Pantalla" más abajo). Referenciar un tipo por nombre obliga
+// al motor QML a resolverlo al compilar ESTE documento: si ese tipo falla
+// (p. ej. en Android), toda la ventana deja de crearse. Cargándolos por URL
+// con Loader.source, el fallo queda contenido en su Loader.
 
 ApplicationWindow {
     id: win
@@ -108,13 +105,13 @@ ApplicationWindow {
         }
     }
 
-    // El diálogo de ayuda se carga de forma perezosa (igual que las pestañas,
-    // ver "Pantalla" más abajo): si AyudaDialog.qml fallara al compilar, solo
-    // se pierde el botón "?" en vez de tumbar toda la app en el arranque.
+    // El diálogo de ayuda se carga de forma perezosa por URL (ver nota de los
+    // imports): si AyudaDialog.qml fallara al cargar, solo se pierde el botón
+    // "?" en vez de tumbar toda la app en el arranque.
     Loader {
         id: ayudaLoader
         active: false
-        sourceComponent: comAyuda
+        source: "qrc:/qt/qml/ManiCuba/qml/components/AyudaDialog.qml"
     }
 
     LicenciaGate {
@@ -172,14 +169,22 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 currentIndex: win.navIndex
 
-                Pantalla { indice: 0; screen: comHome }
-                Pantalla { id: agendaTab; indice: 1; screen: comAgenda }
-                Pantalla { indice: 2; screen: comClientes }
-                Pantalla { indice: 3; screen: comFinanzas }
-                Pantalla { indice: 4; screen: comServicios }
-                Pantalla { indice: 5; screen: comInventario }
-                Pantalla { indice: 6; screen: comRedes }
-                Pantalla { indice: 7; screen: comGaleria }
+                Pantalla {
+                    id: homeTab
+                    indice: 0
+                    url: "qrc:/qt/qml/ManiCuba/qml/screens/HomeScreen.qml"
+                    Connections {
+                        target: homeTab.item
+                        function onIrA(indice) { win.navIndex = indice }
+                    }
+                }
+                Pantalla { id: agendaTab; indice: 1; url: "qrc:/qt/qml/ManiCuba/qml/screens/agenda/AgendaScreen.qml" }
+                Pantalla { indice: 2; url: "qrc:/qt/qml/ManiCuba/qml/screens/clientes/ClientesScreen.qml" }
+                Pantalla { indice: 3; url: "qrc:/qt/qml/ManiCuba/qml/screens/finanzas/FinanzasScreen.qml" }
+                Pantalla { indice: 4; url: "qrc:/qt/qml/ManiCuba/qml/screens/servicios/ServiciosScreen.qml" }
+                Pantalla { indice: 5; url: "qrc:/qt/qml/ManiCuba/qml/screens/inventario/InventarioScreen.qml" }
+                Pantalla { indice: 6; url: "qrc:/qt/qml/ManiCuba/qml/screens/redes/RedesScreen.qml" }
+                Pantalla { indice: 7; url: "qrc:/qt/qml/ManiCuba/qml/screens/galeria/GaleriaScreen.qml" }
             }
         }
     }
@@ -224,7 +229,7 @@ ApplicationWindow {
     component Pantalla: Item {
         id: pant
         property int indice: 0
-        property Component screen: null
+        property url url: ""
         property alias item: loader.item
 
         function activar() { loader.active = true }
@@ -233,7 +238,7 @@ ApplicationWindow {
             id: loader
             anchors.fill: parent
             active: false
-            sourceComponent: pant.screen
+            source: pant.url
 
             Connections {
                 target: win
@@ -265,15 +270,4 @@ ApplicationWindow {
             }
         }
     }
-
-    Component { id: comAyuda; AyudaDialog {} }
-
-    Component { id: comHome; HomeScreen { onIrA: function (indice) { win.navIndex = indice } } }
-    Component { id: comAgenda; AgendaScreen {} }
-    Component { id: comClientes; ClientesScreen {} }
-    Component { id: comFinanzas; FinanzasScreen {} }
-    Component { id: comServicios; ServiciosScreen {} }
-    Component { id: comInventario; InventarioScreen {} }
-    Component { id: comRedes; RedesScreen {} }
-    Component { id: comGaleria; GaleriaScreen {} }
 }
