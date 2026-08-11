@@ -93,7 +93,7 @@ El script configura con `qt-cmake`, compila y ejecuta `androiddeployqt`. El APK
 qt/build-android/android-build/build/outputs/apk/debug/android-build-debug.apk
 ```
 
-Paquete `com.albertofeito.manicuba_app`, `minSdk 24` (Android 7.0+). Para otras
+Paquete `com.albertofeito.manicuba_qt`, `minSdk 24` (Android 7.0+). Para otras
 arquitecturas cambia `ABI` (p. ej. `ABI=armeabi-v7a`). El proyecto Android
 (manifest, icono) está en `qt/android/`.
 

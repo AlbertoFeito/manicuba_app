@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
     // Identidad para QSettings (licencia, categorías personalizadas).
     QCoreApplication::setOrganizationName(QStringLiteral("AlbertoFeito"));
-    QCoreApplication::setApplicationName(QStringLiteral("ManiCuba"));
+    QCoreApplication::setApplicationName(QStringLiteral("ManiCubaQt"));
     QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
 
     // Estilo Material (rosa) para acercarnos al look de la app Flutter.

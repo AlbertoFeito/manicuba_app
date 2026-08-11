@@ -18,7 +18,7 @@ ApplicationWindow {
     width: 420
     height: 820
     visible: true
-    title: "ManiCuba 💅"
+    title: "ManiCuba Qt 💅"
 
     Material.theme: Theme.dark ? Material.Dark : Material.Light
     Material.primary: Theme.primary
