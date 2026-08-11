@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlError>
 #include <QQuickStyle>
@@ -168,6 +169,36 @@ int main(int argc, char *argv[])
     engine.load(QUrl(QStringLiteral("qrc:/qt/qml/ManiCuba/qml/Main.qml")));
     if (engine.rootObjects().isEmpty() || !creado) {
         qCritical("No se pudo cargar la interfaz QML.");
+
+        // Diagnóstico extra: intenta cargar por SEPARADO, con su propio
+        // QQmlComponent, algunos de los .qml que suelen aparecer como
+        // "no es un tipo" al fallar Main.qml. El error agregado que reporta
+        // el motor al fallar el documento raíz suele resumir la causa real;
+        // aquí se pide el detalle completo (Component::errors()) archivo por
+        // archivo para saber el motivo verdadero.
+        static const char *kSondas[] = {
+            "qrc:/qt/qml/ManiCuba/qml/components/AppCard.qml",
+            "qrc:/qt/qml/ManiCuba/qml/components/AyudaDialog.qml",
+            "qrc:/qt/qml/ManiCuba/qml/components/EmptyState.qml",
+            "qrc:/qt/qml/ManiCuba/qml/components/SectionHeader.qml",
+            "qrc:/qt/qml/ManiCuba/qml/LicenciaGate.qml",
+        };
+        for (const char *ruta : kSondas) {
+            QQmlComponent sonda(&engine, QUrl(QString::fromUtf8(ruta)),
+                                 QQmlComponent::PreferSynchronous);
+            QString resultado = QStringLiteral("[SONDA] %1 -> ").arg(QString::fromUtf8(ruta));
+            if (sonda.isReady()) {
+                resultado += QStringLiteral("OK (listo para crear)");
+            } else if (sonda.isError()) {
+                resultado += QStringLiteral("ERROR:");
+                for (const QQmlError &e : sonda.errors())
+                    resultado += QStringLiteral("\n    ") + e.toString();
+            } else {
+                resultado += QStringLiteral("status=%1 (ni listo ni error; ¿async?)")
+                                  .arg(sonda.status());
+            }
+            appendDiag(resultado);
+        }
 
         // En vez de cerrar en silencio, muestra el error en pantalla para que se
         // pueda diagnosticar desde el teléfono (una captura basta). La ventana de
