@@ -66,7 +66,13 @@ ApplicationWindow {
             ToolButton {
                 text: "?"
                 font.pixelSize: 20; font.bold: true
-                onClicked: { ayuda.clave = win.clavesAyuda[win.navIndex]; ayuda.open() }
+                onClicked: {
+                    ayudaLoader.active = true
+                    if (ayudaLoader.item) {
+                        ayudaLoader.item.clave = win.clavesAyuda[win.navIndex]
+                        ayudaLoader.item.open()
+                    }
+                }
             }
             ToolButton {
                 text: Theme.dark ? "☀️" : "🌙"
@@ -102,7 +108,14 @@ ApplicationWindow {
         }
     }
 
-    AyudaDialog { id: ayuda }
+    // El diálogo de ayuda se carga de forma perezosa (igual que las pestañas,
+    // ver "Pantalla" más abajo): si AyudaDialog.qml fallara al compilar, solo
+    // se pierde el botón "?" en vez de tumbar toda la app en el arranque.
+    Loader {
+        id: ayudaLoader
+        active: false
+        sourceComponent: comAyuda
+    }
 
     LicenciaGate {
         id: gate
@@ -252,6 +265,8 @@ ApplicationWindow {
             }
         }
     }
+
+    Component { id: comAyuda; AyudaDialog {} }
 
     Component { id: comHome; HomeScreen { onIrA: function (indice) { win.navIndex = indice } } }
     Component { id: comAgenda; AgendaScreen {} }
