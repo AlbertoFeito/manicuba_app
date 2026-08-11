@@ -50,4 +50,8 @@ public:
     Q_INVOKABLE QString etiquetaEstado(const QString &estado) const;
     // Ayuda de una ventana: { titulo, icono, puntos: [..] }.
     Q_INVOKABLE QVariantMap ayuda(const QString &clave) const;
+
+    // Registro de diagnóstico del arranque (contenido de manicuba_log.txt).
+    // Se usa para mostrar en pantalla el motivo de un fallo de carga QML.
+    Q_INVOKABLE QString diagRegistro() const;
 };

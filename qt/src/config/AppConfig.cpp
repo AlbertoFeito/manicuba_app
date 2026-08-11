@@ -1,8 +1,21 @@
 #include "config/AppConfig.h"
 
+#include <QDir>
+#include <QFile>
 #include <QLocale>
+#include <QStandardPaths>
 
 AppConfig::AppConfig(QObject *parent) : QObject(parent) {}
+
+QString AppConfig::diagRegistro() const
+{
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QString path = QDir(dir).filePath(QStringLiteral("manicuba_log.txt"));
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return QStringLiteral("(no hay registro disponible)");
+    return QString::fromUtf8(f.readAll());
+}
 
 QStringList AppConfig::categoriasGastos() const
 {

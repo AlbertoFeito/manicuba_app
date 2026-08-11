@@ -86,7 +86,12 @@ ApplicationWindow {
                     MenuSeparator {}
                     MenuItem {
                         text: "🗂  Historial de citas"
-                        onTriggered: { win.navIndex = 1; agendaTab.abrirHistorial() }
+                        onTriggered: {
+                            win.navIndex = 1
+                            agendaTab.activar()
+                            if (agendaTab.item)
+                                agendaTab.item.abrirHistorial()
+                        }
                     }
                     MenuItem {
                         text: "🔑  Licencia"
@@ -144,22 +149,24 @@ ApplicationWindow {
                 }
             }
 
-            // Contenido
+            // Contenido. Cada pantalla se carga de forma perezosa (Loader) la
+            // primera vez que se visita y permanece cargada. Así un fallo en una
+            // pantalla concreta no impide arrancar la app: se aísla y se muestra
+            // el error dentro de esa pestaña en lugar de cerrar todo.
             StackLayout {
+                id: contenido
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 currentIndex: win.navIndex
 
-                HomeScreen {
-                    onIrA: function (indice) { win.navIndex = indice }
-                }
-                AgendaScreen { id: agendaTab }
-                ClientesScreen {}
-                FinanzasScreen {}
-                ServiciosScreen {}
-                InventarioScreen {}
-                RedesScreen {}
-                GaleriaScreen {}
+                Pantalla { indice: 0; screen: comHome }
+                Pantalla { id: agendaTab; indice: 1; screen: comAgenda }
+                Pantalla { indice: 2; screen: comClientes }
+                Pantalla { indice: 3; screen: comFinanzas }
+                Pantalla { indice: 4; screen: comServicios }
+                Pantalla { indice: 5; screen: comInventario }
+                Pantalla { indice: 6; screen: comRedes }
+                Pantalla { indice: 7; screen: comGaleria }
             }
         }
     }
@@ -194,4 +201,64 @@ ApplicationWindow {
             }
         }
     }
+
+    // ----- Carga perezosa de pantallas -----
+    //
+    // Cada pestaña se instancia con un Loader la primera vez que se visita y
+    // permanece cargada. Si una pantalla falla al crearse, se muestra el error
+    // dentro de su pestaña (con el registro de diagnóstico) en lugar de cerrar
+    // toda la app.
+    component Pantalla: Item {
+        id: pant
+        property int indice: 0
+        property Component screen: null
+        property alias item: loader.item
+
+        function activar() { loader.active = true }
+
+        Loader {
+            id: loader
+            anchors.fill: parent
+            active: false
+            sourceComponent: pant.screen
+
+            Connections {
+                target: win
+                function onNavIndexChanged() {
+                    if (win.navIndex === pant.indice)
+                        loader.active = true
+                }
+            }
+            Component.onCompleted: if (win.navIndex === pant.indice) loader.active = true
+        }
+
+        Flickable {
+            anchors.fill: parent
+            anchors.margins: Theme.padding
+            visible: loader.status === Loader.Error
+            contentWidth: width
+            contentHeight: errTxt.implicitHeight + 24
+            clip: true
+            Text {
+                id: errTxt
+                width: parent.width
+                wrapMode: Text.WrapAnywhere
+                color: Theme.textPrimary
+                font.pixelSize: 13
+                textFormat: Text.PlainText
+                text: loader.status === Loader.Error
+                      ? "No se pudo cargar esta pantalla.\n\n" + AppConfig.diagRegistro()
+                      : ""
+            }
+        }
+    }
+
+    Component { id: comHome; HomeScreen { onIrA: function (indice) { win.navIndex = indice } } }
+    Component { id: comAgenda; AgendaScreen {} }
+    Component { id: comClientes; ClientesScreen {} }
+    Component { id: comFinanzas; FinanzasScreen {} }
+    Component { id: comServicios; ServiciosScreen {} }
+    Component { id: comInventario; InventarioScreen {} }
+    Component { id: comRedes; RedesScreen {} }
+    Component { id: comGaleria; GaleriaScreen {} }
 }
