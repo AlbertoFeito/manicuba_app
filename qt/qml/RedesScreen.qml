@@ -9,6 +9,12 @@ import ManiCuba
 Item {
     id: root
 
+    // Usado por el botón atrás de Android (ver Main.qml).
+    function volver() {
+        if (stack.depth > 1) { stack.pop(); return true }
+        return false
+    }
+
     StackView {
         id: stack
         anchors.fill: parent

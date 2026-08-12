@@ -9,6 +9,14 @@ import ManiCuba
 Item {
     id: root
 
+    // Usado por el botón atrás de Android (ver Main.qml): si hay un
+    // formulario/detalle apilado lo cierra y devuelve true; si ya está en la
+    // raíz de la pestaña, no hace nada y devuelve false.
+    function volver() {
+        if (stack.depth > 1) { stack.pop(); return true }
+        return false
+    }
+
     StackView {
         id: stack
         anchors.fill: parent

@@ -105,15 +105,23 @@ Page {
                 color: Theme.error; font.pixelSize: 13; Layout.fillWidth: true
                 wrapMode: Text.WordWrap
             }
+        }
+    }
 
-            Button {
-                Layout.fillWidth: true
-                text: page.esEdicion ? "Guardar cambios" : "Registrar gasto"
-                Material.background: Theme.primary
-                Material.foreground: "white"
-                background: Rectangle { color: Theme.primary; radius: 6 }
-                onClicked: page.guardar()
-            }
+    // Botón fijo (no dentro del Flickable): siempre visible.
+    footer: Rectangle {
+        color: Theme.surface
+        implicitHeight: btnGuardar.implicitHeight + Theme.padding * 2
+
+        Button {
+            id: btnGuardar
+            anchors.fill: parent
+            anchors.margins: Theme.padding
+            text: page.esEdicion ? "Guardar cambios" : "Registrar gasto"
+            Material.background: Theme.primary
+            Material.foreground: "white"
+            background: Rectangle { color: Theme.primary; radius: 6 }
+            onClicked: page.guardar()
         }
     }
 

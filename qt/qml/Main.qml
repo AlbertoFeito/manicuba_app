@@ -44,6 +44,43 @@ ApplicationWindow {
     readonly property var clavesAyuda: [
         "inicio", "agenda", "clientes", "finanzas", "servicios", "inventario", "redes", "galeria"
     ]
+    // Nodos "Pantalla" en el mismo orden que "pantallas" (índice = navIndex),
+    // para que el botón atrás pueda alcanzar la pestaña activa sin importar
+    // cuál sea.
+    readonly property list<Item> pantallasNodos: [
+        homeTab, agendaTab, clientesTab, finanzasTab,
+        serviciosTab, inventarioTab, redesTab, galeriaTab
+    ]
+
+    // Botón/gesto atrás de Android: primero intenta cerrar lo que haya
+    // apilado dentro de la pestaña activa (formulario, detalle, visor de
+    // foto); si no hay nada que cerrar y no estamos en Inicio, va a Inicio;
+    // si ya estamos en Inicio, deja que quien llama decida (doble toque).
+    function volverAtras() {
+        const pantalla = win.pantallasNodos[win.navIndex] ? win.pantallasNodos[win.navIndex].item : null
+        if (pantalla && typeof pantalla.volver === "function" && pantalla.volver())
+            return true
+        if (win.navIndex !== 0) {
+            win.navIndex = 0
+            return true
+        }
+        return false
+    }
+
+    onClosing: (close) => {
+        close.accepted = false
+        if (win.volverAtras())
+            return
+        // Ya en Inicio sin nada que cerrar: hace falta un segundo toque.
+        if (salirTimer.running) {
+            close.accepted = true
+        } else {
+            salirTimer.restart()
+            toast.mostrar("Toca atrás de nuevo para salir")
+        }
+    }
+
+    Timer { id: salirTimer; interval: 2000 }
 
     header: ToolBar {
         Material.background: Theme.primary
@@ -145,7 +182,11 @@ ApplicationWindow {
                             onClicked: win.navIndex = index
                             contentItem: RowLayout {
                                 spacing: Theme.paddingSmall
-                                Text { text: modelData.icono; font.pixelSize: 20 }
+                                Text {
+                                    text: modelData.icono
+                                    font.pixelSize: 20
+                                    opacity: win.navIndex === index ? 1 : 0.6
+                                }
                                 Text {
                                     text: modelData.texto
                                     font.pixelSize: 15
@@ -169,6 +210,23 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 currentIndex: win.navIndex
 
+                // Fundido suave al cambiar de pestaña en vez del cambio
+                // instantáneo por defecto de StackLayout. "from: 0" hace que
+                // cada vez que se reinicia, la opacidad salte a 0 y luego
+                // suba a 1, sin necesidad de apagarla a mano primero.
+                NumberAnimation {
+                    id: fundidoPestana
+                    target: contenido
+                    property: "opacity"
+                    from: 0; to: 1
+                    duration: 150
+                    easing.type: Easing.OutQuad
+                }
+                Connections {
+                    target: win
+                    function onNavIndexChanged() { fundidoPestana.restart() }
+                }
+
                 Pantalla {
                     id: homeTab
                     indice: 0
@@ -179,13 +237,45 @@ ApplicationWindow {
                     }
                 }
                 Pantalla { id: agendaTab; indice: 1; url: "qrc:/qt/qml/ManiCuba/qml/AgendaScreen.qml" }
-                Pantalla { indice: 2; url: "qrc:/qt/qml/ManiCuba/qml/ClientesScreen.qml" }
-                Pantalla { indice: 3; url: "qrc:/qt/qml/ManiCuba/qml/FinanzasScreen.qml" }
-                Pantalla { indice: 4; url: "qrc:/qt/qml/ManiCuba/qml/ServiciosScreen.qml" }
-                Pantalla { indice: 5; url: "qrc:/qt/qml/ManiCuba/qml/InventarioScreen.qml" }
-                Pantalla { indice: 6; url: "qrc:/qt/qml/ManiCuba/qml/RedesScreen.qml" }
-                Pantalla { indice: 7; url: "qrc:/qt/qml/ManiCuba/qml/GaleriaScreen.qml" }
+                Pantalla { id: clientesTab; indice: 2; url: "qrc:/qt/qml/ManiCuba/qml/ClientesScreen.qml" }
+                Pantalla { id: finanzasTab; indice: 3; url: "qrc:/qt/qml/ManiCuba/qml/FinanzasScreen.qml" }
+                Pantalla { id: serviciosTab; indice: 4; url: "qrc:/qt/qml/ManiCuba/qml/ServiciosScreen.qml" }
+                Pantalla { id: inventarioTab; indice: 5; url: "qrc:/qt/qml/ManiCuba/qml/InventarioScreen.qml" }
+                Pantalla { id: redesTab; indice: 6; url: "qrc:/qt/qml/ManiCuba/qml/RedesScreen.qml" }
+                Pantalla { id: galeriaTab; indice: 7; url: "qrc:/qt/qml/ManiCuba/qml/GaleriaScreen.qml" }
             }
+        }
+    }
+
+    // Aviso breve para el doble-toque-para-salir (ver onClosing). Encima de
+    // todo lo demás: declarado después de LicenciaGate en el orden de hijos.
+    Rectangle {
+        id: toast
+        visible: opacity > 0
+        opacity: 0
+        radius: 8
+        color: "#000000cc"
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Theme.paddingLarge
+        width: toastTxt.implicitWidth + Theme.padding * 2
+        height: toastTxt.implicitHeight + Theme.paddingSmall * 2
+
+        Behavior on opacity { NumberAnimation { duration: 150 } }
+
+        Text {
+            id: toastTxt
+            anchors.centerIn: parent
+            color: "white"
+            font.pixelSize: 13
+        }
+
+        Timer { id: toastTimer; interval: 1500; onTriggered: toast.opacity = 0 }
+
+        function mostrar(texto) {
+            toastTxt.text = texto
+            opacity = 1
+            toastTimer.restart()
         }
     }
 
@@ -207,7 +297,9 @@ ApplicationWindow {
                     Text {
                         text: info.icono
                         font.pixelSize: 18
+                        opacity: activo ? 1 : 0.6
                         Layout.alignment: Qt.AlignHCenter
+                        Behavior on opacity { NumberAnimation { duration: 120 } }
                     }
                     Text {
                         text: info.texto

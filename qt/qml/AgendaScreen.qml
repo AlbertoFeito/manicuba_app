@@ -11,6 +11,14 @@ Item {
 
     function abrirHistorial() { stack.push(histComp) }
 
+    // Usado por el botón atrás de Android (ver Main.qml): si hay algo
+    // apilado (formulario, historial) lo cierra y devuelve true; si ya
+    // está en la raíz de la pestaña, no hace nada y devuelve false.
+    function volver() {
+        if (stack.depth > 1) { stack.pop(); return true }
+        return false
+    }
+
     StackView {
         id: stack
         anchors.fill: parent

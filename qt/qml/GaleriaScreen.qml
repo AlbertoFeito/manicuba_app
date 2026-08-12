@@ -16,6 +16,13 @@ Item {
     Component.onCompleted: refrescar()
     Connections { target: Fotos; function onCambiado() { root.refrescar() } }
 
+    // Usado por el botón atrás de Android (ver Main.qml): cierra el visor de
+    // foto si está abierto.
+    function volver() {
+        if (visor.visible) { visor.close(); return true }
+        return false
+    }
+
     FileDialog {
         id: selector
         title: "Elegir imagen"
