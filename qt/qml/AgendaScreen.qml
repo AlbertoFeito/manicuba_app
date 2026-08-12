@@ -54,12 +54,12 @@ Item {
                         Layout.fillWidth: true
                         spacing: 0
                         Text {
-                            text: Qt.formatDate(page.fechaSel, "dddd")
+                            text: page.fechaSel.toLocaleDateString(Qt.locale("es_ES"), "dddd")
                             font.pixelSize: 13; color: Theme.textSecondary
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Text {
-                            text: Qt.formatDate(page.fechaSel, "d 'de' MMMM yyyy")
+                            text: page.fechaSel.toLocaleDateString(Qt.locale("es_ES"), "d 'de' MMMM yyyy")
                             font.pixelSize: 16; font.bold: true; color: Theme.textPrimary
                             Layout.alignment: Qt.AlignHCenter
                         }

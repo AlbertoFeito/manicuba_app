@@ -4,10 +4,12 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import ManiCuba
 
-// Campo de fecha: un botón que muestra la fecha elegida (en español) y abre
-// un calendario emergente para seleccionarla, en vez de escribirla a mano
-// como texto libre "yyyy-MM-dd". "fecha" sigue siendo ese mismo formato de
-// string por compatibilidad con el resto del código (Finanzas, Citas...).
+// Campo de fecha: se ve y se comporta como los demás TextField de la app
+// (misma línea inferior Material, sin caja/relleno de color), pero es de
+// solo lectura y al tocarlo abre un calendario emergente en vez del
+// teclado — igual que el showDatePicker() de la versión Flutter original
+// (ver lib/screens/agenda/cita_form_screen.dart). "fecha" sigue siendo un
+// string "yyyy-MM-dd" por compatibilidad con el resto del código.
 ColumnLayout {
     id: root
     property string etiqueta: "Fecha"
@@ -25,33 +27,32 @@ ColumnLayout {
 
     Text { text: root.etiqueta; font.pixelSize: 13; color: Theme.textSecondary }
 
-    Button {
+    TextField {
         id: campo
         Layout.fillWidth: true
-        flat: true
-        background: Rectangle {
-            radius: 6
-            color: Theme.surfaceAlt
-            border.color: Theme.divider
-            border.width: 1
-            implicitHeight: 44
+        readOnly: true
+        activeFocusOnPress: false
+        text: root.fechaObj.toLocaleDateString(root.localeEs, "dd/MM/yyyy")
+        rightPadding: iconoCal.implicitWidth + 12
+        Material.accent: Theme.primary
+
+        Text {
+            id: iconoCal
+            text: "📅"
+            font.pixelSize: 16
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
         }
-        contentItem: RowLayout {
+
+        MouseArea {
             anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            Text {
-                text: root.localeEs.toString(root.fechaObj, "d MMM yyyy")
-                color: Theme.textPrimary
-                font.pixelSize: 14
-                Layout.fillWidth: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                grid.month = root.fechaObj.getMonth()
+                grid.year = root.fechaObj.getFullYear()
+                popup.open()
             }
-            Text { text: "📅"; font.pixelSize: 16 }
-        }
-        onClicked: {
-            grid.month = root.fechaObj.getMonth()
-            grid.year = root.fechaObj.getFullYear()
-            popup.open()
         }
     }
 
@@ -78,7 +79,7 @@ ColumnLayout {
                     }
                 }
                 Label {
-                    text: root.localeEs.standaloneMonthName(grid.month + 1) + " " + grid.year
+                    text: (new Date(grid.year, grid.month, 1)).toLocaleDateString(root.localeEs, "MMMM yyyy")
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                     font.bold: true

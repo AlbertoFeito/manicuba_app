@@ -39,7 +39,7 @@ Item {
                 Layout.leftMargin: Theme.padding
                 Layout.rightMargin: Theme.padding
                 titulo: "Resumen del día"
-                subtitulo: Qt.formatDate(new Date(), "dddd d 'de' MMMM")
+                subtitulo: (new Date()).toLocaleDateString(Qt.locale("es_ES"), "dddd d 'de' MMMM")
             }
 
             GridLayout {
