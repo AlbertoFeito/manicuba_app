@@ -5,61 +5,60 @@ import QtQuick.Layouts
 import ManiCuba
 
 // Diálogo de ayuda contextual de una ventana. Se alimenta de AppConfig.ayuda(clave).
+//
+// Deliberadamente NO personaliza "header"/"background"/"contentItem": son
+// propiedades diferidas de Popup y sobreescribirlas a mano (con hijos con id
+// propio dentro) dejaba el diálogo con alto 0 — el contenido se veía
+// "flotando" sin tarjeta detrás en vez de dentro de un cuadro. Usando el
+// cromado por defecto de Material (ya coloreado vía Material.primary /
+// Material.theme puestos en Main.qml) el tamaño se calcula bien siempre.
 Dialog {
     id: dlg
     property string clave: "inicio"
-    property var info: AppConfig.ayuda(clave)
+    // Binding puro y reactivo: se recalcula solo cuando cambia "clave". Antes
+    // había además un "onAboutToShow: info = AppConfig.ayuda(clave)" que
+    // ROMPÍA este binding (una asignación imperativa a una propiedad con
+    // binding declarativo lo reemplaza por un valor fijo).
+    readonly property var info: AppConfig.ayuda(clave)
 
     modal: true
     anchors.centerIn: Overlay.overlay
-    width: Math.min(parent ? parent.width - Theme.padding * 2 : 400, 460)
-    padding: Theme.padding
-    standardButtons: Dialog.Ok
+    // OJO: NO usar "parent.width" aquí. Como este diálogo se carga vía
+    // Loader (ver Main.qml), su "parent" real es el propio Loader, que no
+    // tiene ancho propio (0, no null) — "parent ? parent.width : 400"
+    // evaluaba a "0 - padding" (ancho NEGATIVO) en vez de caer al valor por
+    // defecto, y por eso el diálogo se veía sin fondo/tamaño ("sin
+    // contenido"). Overlay.overlay sí tiene siempre el tamaño real de la
+    // ventana.
+    width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 460)
+    title: (info.icono || "💡") + "  " + (info.titulo || "Ayuda")
 
-    onAboutToShow: info = AppConfig.ayuda(clave)
-
-    background: Rectangle { color: Theme.surface; radius: Theme.radius }
-
-    header: Rectangle {
-        color: Theme.primary
-        radius: Theme.radius
-        implicitHeight: 52
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: Theme.padding
-            anchors.rightMargin: Theme.padding
-            spacing: Theme.paddingSmall
-            Text { text: dlg.info.icono || "💡"; font.pixelSize: 20 }
-            Text {
-                text: dlg.info.titulo || "Ayuda"
-                color: "white"; font.pixelSize: 17; font.bold: true
-                Layout.fillWidth: true
-            }
+    footer: DialogButtonBox {
+        Button {
+            text: "Entendido"
+            flat: true
+            DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+            Material.foreground: Theme.primary
         }
     }
 
-    contentItem: Flickable {
-        implicitHeight: Math.min(col.implicitHeight, 420)
-        contentHeight: col.implicitHeight
-        clip: true
-        ColumnLayout {
-            id: col
-            width: parent.width
-            spacing: Theme.padding
-            Repeater {
-                model: dlg.info.puntos || []
-                delegate: RowLayout {
-                    required property var modelData
+    ColumnLayout {
+        width: dlg.availableWidth
+        spacing: Theme.padding
+
+        Repeater {
+            model: dlg.info.puntos || []
+            delegate: RowLayout {
+                required property var modelData
+                Layout.fillWidth: true
+                spacing: Theme.paddingSmall
+                Text { text: "•"; color: Theme.primary; font.pixelSize: 16; font.bold: true }
+                Text {
+                    text: modelData
+                    color: Theme.textPrimary
+                    font.pixelSize: 14
+                    wrapMode: Text.WordWrap
                     Layout.fillWidth: true
-                    spacing: Theme.paddingSmall
-                    Text { text: "•"; color: Theme.primary; font.pixelSize: 16; font.bold: true }
-                    Text {
-                        text: modelData
-                        color: Theme.textPrimary
-                        font.pixelSize: 14
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
                 }
             }
         }

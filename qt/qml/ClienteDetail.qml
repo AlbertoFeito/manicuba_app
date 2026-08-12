@@ -35,7 +35,7 @@ Page {
                 Layout.fillWidth: true; elide: Text.ElideRight
             }
             ToolButton {
-                text: "✎"; font.pixelSize: 18
+                text: "✏️"; font.pixelSize: 18
                 onClicked: page.StackView.view.push(formComp, { cliente: page.cliente })
             }
         }
@@ -117,15 +117,23 @@ Page {
                 }
             }
 
-            Item { Layout.preferredHeight: Theme.padding }
+        }
+    }
 
-            Button {
-                Layout.fillWidth: true
-                text: "Eliminar cliente"
-                flat: true
-                Material.foreground: Theme.error
-                onClicked: confirmar.open()
-            }
+    // Botón fijo (mismo patrón que Guardar/Crear en los formularios): no
+    // depende de hacer scroll hasta el final para encontrarlo.
+    footer: Rectangle {
+        color: Theme.surface
+        implicitHeight: btnEliminar.implicitHeight + Theme.padding * 2
+
+        Button {
+            id: btnEliminar
+            anchors.fill: parent
+            anchors.margins: Theme.padding
+            text: "Eliminar cliente"
+            flat: true
+            Material.foreground: Theme.error
+            onClicked: confirmar.open()
         }
     }
 
@@ -134,7 +142,10 @@ Page {
         anchors.centerIn: parent
         modal: true
         title: "Eliminar cliente"
-        standardButtons: Dialog.Cancel | Dialog.Yes
+        footer: DialogButtonBox {
+            Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+        }
         Label { text: "¿Seguro que deseas eliminar a " + (page.cliente.nombre || "") + "?" }
         onAccepted: {
             Clientes.eliminar(page.clienteId)

@@ -12,8 +12,6 @@ Page {
     property string fechaDefault: Qt.formatDate(new Date(), "yyyy-MM-dd")
     readonly property bool esEdicion: cita && cita.id !== undefined
 
-    readonly property var estados: ["pendiente", "confirmada", "completada", "cancelada"]
-
     function horaInicial() {
         if (page.cita.fechaHora)
             return Qt.formatDateTime(new Date(page.cita.fechaHora), "HH:mm")
@@ -97,16 +95,11 @@ Page {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Theme.padding
-                ColumnLayout {
+                SelectorFecha {
+                    id: fFecha
                     Layout.fillWidth: true
-                    Text { text: "Fecha *"; font.pixelSize: 13; color: Theme.textSecondary }
-                    TextField {
-                        id: fFecha
-                        Layout.fillWidth: true
-                        text: page.fechaInicial()
-                        placeholderText: "yyyy-MM-dd"
-                        Material.accent: Theme.primary
-                    }
+                    etiqueta: "Fecha *"
+                    fecha: page.fechaInicial()
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -153,18 +146,6 @@ Page {
                 }
             }
 
-            Text { text: "Estado"; font.pixelSize: 13; color: Theme.textSecondary }
-            ComboBox {
-                id: cbEstado
-                Layout.fillWidth: true
-                model: page.estados.map(function (e) { return AppConfig.etiquetaEstado(e) })
-                Material.accent: Theme.primary
-                Component.onCompleted: {
-                    var actual = page.cita.estado || "pendiente"
-                    currentIndex = Math.max(0, page.estados.indexOf(actual))
-                }
-            }
-
             Text { text: "Notas"; font.pixelSize: 13; color: Theme.textSecondary }
             TextArea {
                 id: fNotas
@@ -208,7 +189,7 @@ Page {
             error.visible = true
             return
         }
-        var fechaHora = fFecha.text.trim() + "T" + fHora.text.trim() + ":00"
+        var fechaHora = fFecha.fecha + "T" + fHora.text.trim() + ":00"
         if (isNaN(Date.parse(fechaHora))) {
             error.text = "Fecha u hora inválida (usa yyyy-MM-dd y HH:mm)."
             error.visible = true
@@ -219,12 +200,14 @@ Page {
             servicioId: cbServicio.currentValue,
             fechaHora: fechaHora,
             duracionMinutos: parseInt(fDuracion.text) || AppConfig.duracionCitaDefault,
-            estado: page.estados[cbEstado.currentIndex],
             monto: fMonto.text.trim().length > 0 ? parseFloat(fMonto.text) : 0,
             notas: fNotas.text.trim()
         }
         if (page.esEdicion) {
+            // El estado se cambia desde el menú de la cita en Agenda, no
+            // aquí: se conserva el que ya tenía.
             datos.id = page.cita.id
+            datos.estado = page.cita.estado || "pendiente"
             Citas.actualizar(datos)
         } else {
             Citas.crear(datos)
@@ -237,7 +220,10 @@ Page {
         anchors.centerIn: parent
         modal: true
         title: "Eliminar cita"
-        standardButtons: Dialog.Cancel | Dialog.Yes
+        footer: DialogButtonBox {
+            Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+        }
         Label { text: "¿Eliminar esta cita? Si tenía ingreso asociado, también se eliminará." }
         onAccepted: {
             Citas.eliminar(page.cita.id)

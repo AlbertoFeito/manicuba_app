@@ -143,7 +143,7 @@ Item {
                                 onClicked: Redes.marcarPublicado(modelData.id)
                             }
                             Item { Layout.fillWidth: true }
-                            ToolButton { text: "✎"; font.pixelSize: 15; Material.foreground: Theme.primary; onClicked: stack.push(formComp, { post: modelData }) }
+                            ToolButton { text: "✏️"; font.pixelSize: 15; Material.foreground: Theme.primary; onClicked: stack.push(formComp, { post: modelData }) }
                             ToolButton { text: "🗑"; font.pixelSize: 14; Material.foreground: Theme.error; onClicked: { page.pendiente = modelData; confirmar.open() } }
                         }
                     }
@@ -165,7 +165,10 @@ Item {
                 anchors.centerIn: parent
                 modal: true
                 title: "Eliminar post"
-                standardButtons: Dialog.Cancel | Dialog.Yes
+                footer: DialogButtonBox {
+                    Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+                    Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+                }
                 Label { text: "¿Eliminar “" + (page.pendiente.titulo || "") + "”?" }
                 onAccepted: Redes.eliminar(page.pendiente.id)
             }

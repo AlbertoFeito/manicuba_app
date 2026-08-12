@@ -79,13 +79,10 @@ Page {
                 }
             }
 
-            Text { text: "Fecha"; font.pixelSize: 13; color: Theme.textSecondary }
-            TextField {
+            SelectorFecha {
                 id: fFecha
                 Layout.fillWidth: true
-                text: page.fechaInicial()
-                placeholderText: "yyyy-MM-dd"
-                Material.accent: Theme.primary
+                fecha: page.fechaInicial()
             }
 
             Text { text: "Notas"; font.pixelSize: 13; color: Theme.textSecondary }
@@ -128,7 +125,7 @@ Page {
     function guardar() {
         var monto = parseFloat(fMonto.text)
         if (fConcepto.text.trim().length === 0 || isNaN(monto) || monto <= 0
-            || isNaN(Date.parse(fFecha.text.trim() + "T12:00:00"))) {
+            || isNaN(Date.parse(fFecha.fecha + "T12:00:00"))) {
             error.visible = true
             return
         }
@@ -136,7 +133,7 @@ Page {
             concepto: fConcepto.text.trim(),
             monto: monto,
             categoria: cbCategoria.currentText,
-            fecha: fFecha.text.trim() + "T12:00:00",
+            fecha: fFecha.fecha + "T12:00:00",
             notas: fNotas.text.trim()
         }
         if (page.esEdicion) {
@@ -153,7 +150,10 @@ Page {
         anchors.centerIn: parent
         modal: true
         title: "Eliminar gasto"
-        standardButtons: Dialog.Cancel | Dialog.Yes
+        footer: DialogButtonBox {
+            Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+        }
         Label { text: "¿Eliminar este gasto?" }
         onAccepted: {
             Finanzas.eliminarGasto(page.gasto.id)

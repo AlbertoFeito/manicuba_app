@@ -331,22 +331,74 @@ Item {
                 }
             }
 
-            // FAB con menú de registro
-            RoundButton {
+            // FAB con dos acciones etiquetadas (Ingreso / Gasto) en vez de un
+            // menú oculto: antes "+" abría un Menu invisible hasta tocarlo,
+            // sin pista de que hubiera que elegir entre dos tipos de
+            // movimiento. Ahora, al tocar "+", aparecen dos botones con
+            // etiqueta encima del FAB.
+            property bool fabAbierto: false
+
+            MouseArea {
+                anchors.fill: parent
+                visible: page.fabAbierto
+                onClicked: page.fabAbierto = false
+            }
+
+            ColumnLayout {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: Theme.paddingLarge
-                text: "+"
-                font.pixelSize: 26
-                Material.background: Theme.primary
-                Material.foreground: "white"
-                background: Rectangle { radius: width / 2; color: Theme.primary }
-                onClicked: menuRegistro.open()
-                Menu {
-                    id: menuRegistro
-                    y: -implicitHeight
-                    MenuItem { text: "➕  Registrar ingreso"; onTriggered: stack.push(ingresoFormComp, {}) }
-                    MenuItem { text: "🧾  Registrar gasto"; onTriggered: stack.push(gastoFormComp, {}) }
+                spacing: Theme.paddingSmall
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignRight
+                    visible: opacity > 0
+                    opacity: page.fabAbierto ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 130 } }
+                    spacing: Theme.paddingSmall
+                    Rectangle {
+                        color: "#000000aa"
+                        radius: 6
+                        implicitWidth: lblGasto.implicitWidth + 16
+                        implicitHeight: lblGasto.implicitHeight + 10
+                        Text { id: lblGasto; anchors.centerIn: parent; text: "Registrar gasto"; color: "white"; font.pixelSize: 13 }
+                    }
+                    RoundButton {
+                        text: "🧾"
+                        font.pixelSize: 18
+                        Material.foreground: "white"
+                        background: Rectangle { radius: width / 2; color: Theme.error }
+                        onClicked: { page.fabAbierto = false; stack.push(gastoFormComp, {}) }
+                    }
+                }
+                RowLayout {
+                    Layout.alignment: Qt.AlignRight
+                    visible: opacity > 0
+                    opacity: page.fabAbierto ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 130 } }
+                    spacing: Theme.paddingSmall
+                    Rectangle {
+                        color: "#000000aa"
+                        radius: 6
+                        implicitWidth: lblIngreso.implicitWidth + 16
+                        implicitHeight: lblIngreso.implicitHeight + 10
+                        Text { id: lblIngreso; anchors.centerIn: parent; text: "Registrar ingreso"; color: "white"; font.pixelSize: 13 }
+                    }
+                    RoundButton {
+                        text: "➕"
+                        font.pixelSize: 18
+                        Material.foreground: "white"
+                        background: Rectangle { radius: width / 2; color: Theme.success }
+                        onClicked: { page.fabAbierto = false; stack.push(ingresoFormComp, {}) }
+                    }
+                }
+                RoundButton {
+                    Layout.alignment: Qt.AlignRight
+                    text: page.fabAbierto ? "✕" : "+"
+                    font.pixelSize: 26
+                    Material.foreground: "white"
+                    background: Rectangle { radius: width / 2; color: Theme.primary }
+                    onClicked: page.fabAbierto = !page.fabAbierto
                 }
             }
 
@@ -363,7 +415,10 @@ Item {
                 anchors.centerIn: parent
                 modal: true
                 title: "Eliminar movimiento"
-                standardButtons: Dialog.Cancel | Dialog.Yes
+                footer: DialogButtonBox {
+                    Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+                    Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+                }
                 Label { text: "¿Eliminar “" + (page.movPendiente.etiqueta || "") + "”?" }
                 onAccepted: {
                     if (page.movPendiente.tipo === "ingreso")
@@ -500,7 +555,7 @@ Item {
             }
             ToolButton {
                 visible: mov.editable === true
-                text: "✎"; font.pixelSize: 15
+                text: "✏️"; font.pixelSize: 15
                 Material.foreground: Theme.primary
                 onClicked: editar()
             }

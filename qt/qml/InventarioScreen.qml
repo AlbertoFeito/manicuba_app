@@ -146,7 +146,7 @@ Item {
                                 }
 
                                 ToolButton {
-                                    text: "✎"; font.pixelSize: 15
+                                    text: "✏️"; font.pixelSize: 15
                                     Material.foreground: Theme.primary
                                     onClicked: stack.push(formComp, { producto: modelData })
                                 }

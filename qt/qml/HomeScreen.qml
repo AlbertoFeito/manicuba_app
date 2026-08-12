@@ -116,7 +116,9 @@ Item {
         anchors.centerIn: parent
         modal: true
         title: "Licencia"
-        standardButtons: Dialog.Ok
+        footer: DialogButtonBox {
+            Button { text: "Aceptar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.primary }
+        }
         Label {
             text: Licencia.estadoTipo === "activa"
                   ? "Licencia activa. ¡Gracias!"

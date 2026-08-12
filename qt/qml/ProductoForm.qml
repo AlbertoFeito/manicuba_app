@@ -69,11 +69,14 @@ Page {
                         }
                     }
                 }
-                Button {
+                RoundButton {
                     text: "＋"
+                    font.pixelSize: 20
+                    implicitWidth: 44
+                    implicitHeight: 44
                     Layout.alignment: Qt.AlignBottom
-                    flat: true
-                    Material.foreground: Theme.primary
+                    Material.foreground: "white"
+                    background: Rectangle { radius: width / 2; color: Theme.primary }
                     onClicked: nuevaCat.open()
                 }
             }
@@ -180,10 +183,25 @@ Page {
         id: nuevaCat
         anchors.centerIn: parent
         modal: true
+        width: Math.min(page.width - Theme.paddingLarge * 2, 380)
+        padding: Theme.padding
         title: "Nueva categoría"
-        standardButtons: Dialog.Cancel | Dialog.Ok
+        footer: DialogButtonBox {
+            Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            Button { text: "Agregar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.primary }
+        }
+        onOpened: catField.forceActiveFocus()
         ColumnLayout {
-            TextField { id: catField; Layout.fillWidth: true; placeholderText: "Nombre de la categoría"; Material.accent: Theme.primary }
+            width: parent.width
+            spacing: Theme.paddingSmall
+            Text { text: "Nombre de la categoría"; font.pixelSize: 13; color: Theme.textSecondary }
+            TextField {
+                id: catField
+                Layout.fillWidth: true
+                placeholderText: "p. ej. Pestañas"
+                Material.accent: Theme.primary
+                onAccepted: nuevaCat.accept()
+            }
         }
         onAccepted: {
             if (catField.text.trim().length > 0 && Categorias.agregarCategoria(catField.text.trim())) {
@@ -199,7 +217,10 @@ Page {
         anchors.centerIn: parent
         modal: true
         title: "Eliminar producto"
-        standardButtons: Dialog.Cancel | Dialog.Yes
+        footer: DialogButtonBox {
+            Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+        }
         Label { text: "¿Eliminar este producto del inventario?" }
         onAccepted: {
             Inventario.eliminar(page.producto.id)

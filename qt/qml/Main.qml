@@ -102,10 +102,8 @@ ApplicationWindow {
                 font.pixelSize: 20; font.bold: true
                 onClicked: {
                     ayudaLoader.active = true
-                    if (ayudaLoader.item) {
-                        ayudaLoader.item.clave = win.clavesAyuda[win.navIndex]
+                    if (ayudaLoader.item)
                         ayudaLoader.item.open()
-                    }
                 }
             }
             ToolButton {
@@ -145,10 +143,15 @@ ApplicationWindow {
     // El diálogo de ayuda se carga de forma perezosa por URL (ver nota de los
     // imports): si AyudaDialog.qml fallara al cargar, solo se pierde el botón
     // "?" en vez de tumbar toda la app en el arranque.
+    //
+    // "clave" se enlaza con Qt.binding() en vez de asignarse una sola vez, así
+    // siempre sigue a la pestaña activa aunque el diálogo ya estuviera cargado
+    // de una visita anterior (no hace falta reasignarla en cada clic).
     Loader {
         id: ayudaLoader
         active: false
         source: "qrc:/qt/qml/ManiCuba/qml/AyudaDialog.qml"
+        onLoaded: item.clave = Qt.binding(function () { return win.clavesAyuda[win.navIndex] })
     }
 
     LicenciaGate {

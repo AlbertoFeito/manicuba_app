@@ -135,7 +135,10 @@ Page {
         anchors.centerIn: parent
         modal: true
         title: "Eliminar servicio"
-        standardButtons: Dialog.Cancel | Dialog.Yes
+        footer: DialogButtonBox {
+            Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+        }
         Label { text: "¿Eliminar este servicio del catálogo?" }
         onAccepted: {
             Servicios.eliminar(page.servicio.id)

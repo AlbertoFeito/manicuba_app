@@ -31,6 +31,7 @@ Item {
             id: page
             property var fechaSel: new Date()
             property var citas: []
+            property var citaAEliminar: ({})
 
             function fechaStr() { return Qt.formatDate(fechaSel, "yyyy-MM-dd") }
             function refrescar() { citas = Citas.activasPorFecha(fechaStr()) }
@@ -80,9 +81,14 @@ Item {
                 bottomMargin: 88
 
                 delegate: ItemDelegate {
+                    id: fila
                     required property var modelData
                     width: ListView.view.width
-                    onClicked: stack.push(citaFormComp, { cita: modelData, fechaDefault: page.fechaStr() })
+                    // Tocar la cita ofrece las 3 acciones (cambiar estado,
+                    // editar, eliminar) en vez de ir directo al formulario:
+                    // el estado se cambia aquí, NO dentro del formulario de
+                    // edición (ver CitaForm.qml).
+                    onClicked: menuCita.open()
                     contentItem: RowLayout {
                         spacing: Theme.padding
                         ColumnLayout {
@@ -113,6 +119,32 @@ Item {
                         }
                         EstadoBadge { estado: modelData.estado || "pendiente" }
                     }
+
+                    Menu {
+                        id: menuCita
+                        MenuItem {
+                            visible: fila.modelData.estado !== "confirmada"
+                            text: "✅  Confirmar"
+                            onTriggered: Citas.cambiarEstado(fila.modelData.id, "confirmada")
+                        }
+                        MenuItem {
+                            text: "🏁  Marcar completada"
+                            onTriggered: Citas.cambiarEstado(fila.modelData.id, "completada")
+                        }
+                        MenuItem {
+                            text: "🚫  Cancelar cita"
+                            onTriggered: Citas.cambiarEstado(fila.modelData.id, "cancelada")
+                        }
+                        MenuSeparator {}
+                        MenuItem {
+                            text: "✏️  Editar"
+                            onTriggered: stack.push(citaFormComp, { cita: fila.modelData, fechaDefault: page.fechaStr() })
+                        }
+                        MenuItem {
+                            text: "🗑  Eliminar"
+                            onTriggered: { page.citaAEliminar = fila.modelData; confirmarEliminar.open() }
+                        }
+                    }
                 }
 
                 EmptyState {
@@ -135,6 +167,19 @@ Item {
                 Material.foreground: "white"
                 background: Rectangle { radius: width / 2; color: Theme.primary }
                 onClicked: stack.push(citaFormComp, { fechaDefault: page.fechaStr() })
+            }
+
+            Dialog {
+                id: confirmarEliminar
+                anchors.centerIn: parent
+                modal: true
+                title: "Eliminar cita"
+                footer: DialogButtonBox {
+                    Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+                    Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
+                }
+                Label { text: "¿Eliminar esta cita? Si tenía ingreso asociado, también se eliminará." }
+                onAccepted: Citas.eliminar(page.citaAEliminar.id)
             }
         }
     }
