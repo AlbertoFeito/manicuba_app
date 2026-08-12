@@ -6,6 +6,10 @@ class Gasto {
   final DateTime fecha;
   final String? notas;
 
+  /// Producto cuya compra generó este gasto. Si viene relleno, el gasto lo
+  /// creó el Inventario y se corrige desde ahí, no desde Finanzas.
+  final int? productoId;
+
   Gasto({
     this.id,
     required this.concepto,
@@ -13,7 +17,12 @@ class Gasto {
     required this.categoria,
     required this.fecha,
     this.notas,
+    this.productoId,
   });
+
+  /// Los gastos automáticos no se editan a mano: cambiarlos sin tocar el
+  /// stock descuadraría el inventario.
+  bool get esAutomatico => productoId != null;
 
   Map<String, dynamic> toMap() {
     return {
@@ -23,6 +32,7 @@ class Gasto {
       'categoria': categoria,
       'fecha': fecha.toIso8601String(),
       'notas': notas,
+      'producto_id': productoId,
     };
   }
 
@@ -34,6 +44,7 @@ class Gasto {
       categoria: map['categoria'] as String,
       fecha: DateTime.parse(map['fecha'] as String),
       notas: map['notas'] as String?,
+      productoId: map['producto_id'] as int?,
     );
   }
 
@@ -44,6 +55,7 @@ class Gasto {
     String? categoria,
     DateTime? fecha,
     String? notas,
+    int? productoId,
   }) {
     return Gasto(
       id: id ?? this.id,
@@ -52,6 +64,7 @@ class Gasto {
       categoria: categoria ?? this.categoria,
       fecha: fecha ?? this.fecha,
       notas: notas ?? this.notas,
+      productoId: productoId ?? this.productoId,
     );
   }
 

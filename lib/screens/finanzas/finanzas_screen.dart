@@ -50,8 +50,14 @@ class _Movimiento {
   final Ingreso? ingreso;
   final Gasto? gasto;
 
-  // true si es un ingreso generado por una cita completada (no editable aquí).
-  bool get automatico => ingreso?.citaId != null;
+  /// true si lo generó la app sola —un ingreso de cita completada o un gasto
+  /// de compra de inventario— y por tanto no se toca desde aquí: hay que
+  /// corregirlo donde se originó, o los dos módulos dejarían de cuadrar.
+  bool get automatico => ingreso?.citaId != null || gasto?.productoId != null;
+
+  /// true si el gasto lo creó una compra registrada en Inventario.
+  bool get esCompraInventario => gasto?.productoId != null;
+
   int? get id => ingreso?.id ?? gasto?.id;
 }
 
@@ -348,14 +354,25 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
 
   Future<void> _accionMovimiento(_Movimiento m) async {
     if (m.automatico) {
-      // Los ingresos de citas se gestionan desde el Historial, no aquí.
+      // Los movimientos automáticos se corrigen donde se originaron: los
+      // ingresos en el Historial de citas, los gastos en Inventario.
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Ingreso de una cita'),
-          content: const Text(
-            'Este ingreso se generó al completar una cita. Para quitarlo, ve '
-            'al Historial de citas (menú ⋮) y usa "Deshacer" en esa cita.',
+          title: Text(
+            m.esCompraInventario
+                ? 'Gasto de una compra'
+                : 'Ingreso de una cita',
+          ),
+          content: Text(
+            m.esCompraInventario
+                ? 'Este gasto se generó al registrar una compra en '
+                    'Inventario. Para quitarlo, ve a Inventario, abre el '
+                    'producto y usa "Deshacer" en esa compra: se borra el '
+                    'gasto y el stock vuelve a como estaba.'
+                : 'Este ingreso se generó al completar una cita. Para '
+                    'quitarlo, ve al Historial de citas (menú ⋮) y usa '
+                    '"Deshacer" en esa cita.',
           ),
           actions: [
             FilledButton(

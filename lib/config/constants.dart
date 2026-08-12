@@ -10,7 +10,7 @@ class AppConstants {
 
   // Configuración de base de datos
   static const String dbName = 'manicuba.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
 
   // Mensajes
   static const String msgErrorGeneral = 'Algo salió mal. Por favor intenta de nuevo.';
@@ -26,8 +26,11 @@ class AppConstants {
   static const String msgEmailInvalido = 'Email inválido';
 
   // Categorías de gastos
+  /// Categoría bajo la que el Inventario registra las compras de producto.
+  static const String categoriaGastoProductos = 'Productos';
+
   static const List<String> categoriasGastos = [
-    'Productos',
+    categoriaGastoProductos,
     'Servicios',
     'Alquiler',
     'Transporte',
@@ -44,6 +47,40 @@ class AppConstants {
     'Limpiadores',
     'Otros'
   ];
+
+  // Movimientos de inventario
+  static const String tipoMovimientoEntrada = 'entrada';
+  static const String tipoMovimientoSalida = 'salida';
+  static const String tipoMovimientoAjuste = 'ajuste';
+
+  /// Una compra es lo único que genera gasto: el dinero sale cuando compras,
+  /// no cuando gastas el producto.
+  static const String motivoCompra = 'compra';
+
+  /// Stock que ya se tenía antes de registrarlo en la app. No genera gasto
+  /// porque ese dinero salió antes de que la app llevara la cuenta.
+  static const String motivoSaldoInicial = 'saldo_inicial';
+
+  static const String motivoConsumo = 'consumo';
+  static const String motivoRotura = 'rotura';
+  static const String motivoVencido = 'vencido';
+  static const String motivoCorreccion = 'correccion';
+
+  /// Motivos que la usuaria elige al descontar stock.
+  static const List<String> motivosSalida = [
+    motivoConsumo,
+    motivoRotura,
+    motivoVencido,
+  ];
+
+  static const Map<String, String> etiquetasMotivo = {
+    motivoCompra: 'Compra',
+    motivoSaldoInicial: 'Stock inicial',
+    motivoConsumo: 'Consumo',
+    motivoRotura: 'Rotura o pérdida',
+    motivoVencido: 'Vencido',
+    motivoCorreccion: 'Corrección de conteo',
+  };
 
   // Métodos de pago
   static const List<String> metodosPago = [
