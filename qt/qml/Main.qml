@@ -111,7 +111,7 @@ ApplicationWindow {
     Loader {
         id: ayudaLoader
         active: false
-        source: "qrc:/qt/qml/ManiCuba/qml/components/AyudaDialog.qml"
+        source: "qrc:/qt/qml/ManiCuba/qml/AyudaDialog.qml"
     }
 
     LicenciaGate {
@@ -172,19 +172,19 @@ ApplicationWindow {
                 Pantalla {
                     id: homeTab
                     indice: 0
-                    url: "qrc:/qt/qml/ManiCuba/qml/screens/HomeScreen.qml"
+                    url: "qrc:/qt/qml/ManiCuba/qml/HomeScreen.qml"
                     Connections {
                         target: homeTab.item
                         function onIrA(indice) { win.navIndex = indice }
                     }
                 }
-                Pantalla { id: agendaTab; indice: 1; url: "qrc:/qt/qml/ManiCuba/qml/screens/agenda/AgendaScreen.qml" }
-                Pantalla { indice: 2; url: "qrc:/qt/qml/ManiCuba/qml/screens/clientes/ClientesScreen.qml" }
-                Pantalla { indice: 3; url: "qrc:/qt/qml/ManiCuba/qml/screens/finanzas/FinanzasScreen.qml" }
-                Pantalla { indice: 4; url: "qrc:/qt/qml/ManiCuba/qml/screens/servicios/ServiciosScreen.qml" }
-                Pantalla { indice: 5; url: "qrc:/qt/qml/ManiCuba/qml/screens/inventario/InventarioScreen.qml" }
-                Pantalla { indice: 6; url: "qrc:/qt/qml/ManiCuba/qml/screens/redes/RedesScreen.qml" }
-                Pantalla { indice: 7; url: "qrc:/qt/qml/ManiCuba/qml/screens/galeria/GaleriaScreen.qml" }
+                Pantalla { id: agendaTab; indice: 1; url: "qrc:/qt/qml/ManiCuba/qml/AgendaScreen.qml" }
+                Pantalla { indice: 2; url: "qrc:/qt/qml/ManiCuba/qml/ClientesScreen.qml" }
+                Pantalla { indice: 3; url: "qrc:/qt/qml/ManiCuba/qml/FinanzasScreen.qml" }
+                Pantalla { indice: 4; url: "qrc:/qt/qml/ManiCuba/qml/ServiciosScreen.qml" }
+                Pantalla { indice: 5; url: "qrc:/qt/qml/ManiCuba/qml/InventarioScreen.qml" }
+                Pantalla { indice: 6; url: "qrc:/qt/qml/ManiCuba/qml/RedesScreen.qml" }
+                Pantalla { indice: 7; url: "qrc:/qt/qml/ManiCuba/qml/GaleriaScreen.qml" }
             }
         }
     }

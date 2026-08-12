@@ -177,11 +177,12 @@ int main(int argc, char *argv[])
         // aquí se pide el detalle completo (Component::errors()) archivo por
         // archivo para saber el motivo verdadero.
         static const char *kSondas[] = {
-            "qrc:/qt/qml/ManiCuba/qml/components/AppCard.qml",
-            "qrc:/qt/qml/ManiCuba/qml/components/AyudaDialog.qml",
-            "qrc:/qt/qml/ManiCuba/qml/components/EmptyState.qml",
-            "qrc:/qt/qml/ManiCuba/qml/components/SectionHeader.qml",
+            "qrc:/qt/qml/ManiCuba/qml/AppCard.qml",
+            "qrc:/qt/qml/ManiCuba/qml/AyudaDialog.qml",
+            "qrc:/qt/qml/ManiCuba/qml/EmptyState.qml",
+            "qrc:/qt/qml/ManiCuba/qml/SectionHeader.qml",
             "qrc:/qt/qml/ManiCuba/qml/LicenciaGate.qml",
+            "qrc:/qt/qml/ManiCuba/qml/HomeScreen.qml",
         };
         for (const char *ruta : kSondas) {
             QQmlComponent sonda(&engine, QUrl(QString::fromUtf8(ruta)),

@@ -40,33 +40,41 @@ qt_add_qml_module(manicuba
     URI ManiCuba
     VERSION 1.0
     RESOURCE_PREFIX /qt/qml
+    # Nota: todos los .qml viven directamente bajo qml/ (sin subcarpetas) a
+    # propósito. En Android, la resolución de tipos por NOMBRE (import
+    # ManiCuba + <Tipo> {}) fallaba de forma sistemática para cualquier tipo
+    # cuyo archivo estuviera en una subcarpeta (qml/components/*, qml/screens/
+    # **/*), aunque el mismo archivo cargaba perfecto por URL directa y aunque
+    # en escritorio nunca falló. Los tipos ya en la raíz (Main, LicenciaGate)
+    # nunca tuvieron el problema. Confirmado con sondas en el propio
+    # dispositivo antes de aplanar la estructura.
     QML_FILES
         qml/Main.qml
         qml/LicenciaGate.qml
-        qml/components/AppCard.qml
-        qml/components/SectionHeader.qml
-        qml/components/EstadoBadge.qml
-        qml/components/EmptyState.qml
-        qml/components/DonutChart.qml
-        qml/components/LineChartMini.qml
-        qml/components/AyudaDialog.qml
-        qml/screens/HomeScreen.qml
-        qml/screens/clientes/ClientesScreen.qml
-        qml/screens/clientes/ClienteForm.qml
-        qml/screens/clientes/ClienteDetail.qml
-        qml/screens/servicios/ServiciosScreen.qml
-        qml/screens/servicios/ServicioForm.qml
-        qml/screens/finanzas/FinanzasScreen.qml
-        qml/screens/finanzas/IngresoForm.qml
-        qml/screens/finanzas/GastoForm.qml
-        qml/screens/inventario/InventarioScreen.qml
-        qml/screens/inventario/ProductoForm.qml
-        qml/screens/redes/RedesScreen.qml
-        qml/screens/redes/PostForm.qml
-        qml/screens/galeria/GaleriaScreen.qml
-        qml/screens/agenda/AgendaScreen.qml
-        qml/screens/agenda/CitaForm.qml
-        qml/screens/agenda/HistorialScreen.qml
+        qml/AppCard.qml
+        qml/SectionHeader.qml
+        qml/EstadoBadge.qml
+        qml/EmptyState.qml
+        qml/DonutChart.qml
+        qml/LineChartMini.qml
+        qml/AyudaDialog.qml
+        qml/HomeScreen.qml
+        qml/ClientesScreen.qml
+        qml/ClienteForm.qml
+        qml/ClienteDetail.qml
+        qml/ServiciosScreen.qml
+        qml/ServicioForm.qml
+        qml/FinanzasScreen.qml
+        qml/IngresoForm.qml
+        qml/GastoForm.qml
+        qml/InventarioScreen.qml
+        qml/ProductoForm.qml
+        qml/RedesScreen.qml
+        qml/PostForm.qml
+        qml/GaleriaScreen.qml
+        qml/AgendaScreen.qml
+        qml/CitaForm.qml
+        qml/HistorialScreen.qml
 )
 
 target_link_libraries(manicuba PRIVATE
