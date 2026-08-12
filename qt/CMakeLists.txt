@@ -59,6 +59,7 @@ qt_add_qml_module(manicuba
         qml/LineChartMini.qml
         qml/AyudaDialog.qml
         qml/SelectorFecha.qml
+        qml/SelectorHora.qml
         qml/HomeScreen.qml
         qml/ClientesScreen.qml
         qml/ClienteForm.qml

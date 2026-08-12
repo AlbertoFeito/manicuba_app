@@ -101,16 +101,11 @@ Page {
                     etiqueta: "Fecha *"
                     fecha: page.fechaInicial()
                 }
-                ColumnLayout {
+                SelectorHora {
+                    id: fHora
                     Layout.fillWidth: true
-                    Text { text: "Hora *"; font.pixelSize: 13; color: Theme.textSecondary }
-                    TextField {
-                        id: fHora
-                        Layout.fillWidth: true
-                        text: page.horaInicial()
-                        placeholderText: "HH:mm"
-                        Material.accent: Theme.primary
-                    }
+                    etiqueta: "Hora *"
+                    hora: page.horaInicial()
                 }
             }
 
@@ -189,7 +184,7 @@ Page {
             error.visible = true
             return
         }
-        var fechaHora = fFecha.fecha + "T" + fHora.text.trim() + ":00"
+        var fechaHora = fFecha.fecha + "T" + fHora.hora + ":00"
         if (isNaN(Date.parse(fechaHora))) {
             error.text = "Fecha u hora inválida (usa yyyy-MM-dd y HH:mm)."
             error.visible = true
