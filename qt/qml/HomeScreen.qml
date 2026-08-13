@@ -118,6 +118,7 @@ Item {
         id: proximamente
         anchors.centerIn: parent
         modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 360)
         title: "Licencia"
         footer: DialogButtonBox {
             Button { text: "Aceptar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.primary }

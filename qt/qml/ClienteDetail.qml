@@ -145,6 +145,7 @@ Page {
         id: confirmar
         anchors.centerIn: parent
         modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 360)
         title: "Eliminar cliente"
         footer: DialogButtonBox {
             Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
@@ -163,10 +164,10 @@ Page {
         id: toastCopiado
         x: (page.width - width) / 2
         y: page.height - height - Theme.paddingLarge * 3
-        timeout: 1500
         closePolicy: Popup.NoAutoClose
         background: Rectangle { color: "#333333"; radius: 8 }
         contentItem: Label { text: "Teléfono copiado"; color: "white"; padding: 10 }
+        Timer { interval: 1500; running: toastCopiado.visible; onTriggered: toastCopiado.close() }
     }
 
     Dialog {

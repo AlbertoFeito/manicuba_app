@@ -6,8 +6,10 @@ import QtQuick.Dialogs
 import ManiCuba
 
 // Galería de fotos de trabajo. Portado de
-// lib/screens/galeria/galeria_screen.dart. En escritorio se eligen imágenes con
-// el selector de archivos; se copian al almacenamiento de la app.
+// lib/screens/galeria/galeria_screen.dart. Al agregar una foto se puede
+// tomarla con la cámara del dispositivo (Camara.tomarFoto(), Android) o
+// elegirla del selector del sistema (FileDialog, que en Android es su propia
+// galería/Fotos).
 Item {
     id: root
 
@@ -15,6 +17,20 @@ Item {
     function refrescar() { fotos = Fotos.obtenerTodas() }
     Component.onCompleted: refrescar()
     Connections { target: Fotos; function onCambiado() { root.refrescar() } }
+
+    // La app de Cámara del sistema corre fuera del proceso: no hay callback
+    // de resultado sin una subclase Java propia, así que se recoge la foto
+    // (si la hubo) en cuanto la app recupera el foco.
+    Connections {
+        target: Qt.application
+        function onStateChanged() {
+            if (Qt.application.state === Qt.ApplicationActive) {
+                const ruta = Camara.recogerCaptura()
+                if (ruta)
+                    Fotos.guardarDesdeArchivo(ruta)
+            }
+        }
+    }
 
     // Usado por el botón atrás de Android (ver Main.qml): cierra el visor de
     // foto si está abierto.
@@ -28,6 +44,17 @@ Item {
         title: "Elegir imagen"
         nameFilters: ["Imágenes (*.png *.jpg *.jpeg *.webp *.bmp)"]
         onAccepted: Fotos.guardarDesdeArchivo(selectedFile)
+    }
+
+    Menu {
+        id: menuAgregar
+        MenuItem {
+            text: "📷  Tomar foto"
+            visible: Qt.platform.os === "android"
+            height: visible ? implicitHeight : 0
+            onTriggered: Camara.tomarFoto()
+        }
+        MenuItem { text: "🖼  Elegir de la galería"; onTriggered: selector.open() }
     }
 
     GridView {
@@ -81,7 +108,7 @@ Item {
         font.pixelSize: 26
         Material.foreground: "white"
         background: Rectangle { radius: width / 2; color: Theme.primary }
-        onClicked: selector.open()
+        onClicked: menuAgregar.open()
     }
 
     // Visor a pantalla completa con opción de eliminar

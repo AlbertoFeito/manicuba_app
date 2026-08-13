@@ -134,6 +134,7 @@ Page {
         id: confirmar
         anchors.centerIn: parent
         modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 360)
         title: "Eliminar servicio"
         footer: DialogButtonBox {
             Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
