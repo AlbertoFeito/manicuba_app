@@ -74,6 +74,7 @@ class Ayudas {
       'Toca un movimiento para Editarlo o Eliminarlo si lo registraste por error. Los automáticos no se editan aquí: los ingresos de citas se quitan con "Deshacer" en el Historial, y los gastos de compras con "Deshacer" en el historial del producto.',
       'Usa los filtros Hoy / Semana / Mes / Todo para acotar los movimientos y el gráfico de gastos.',
       'El gráfico circular reparte tus gastos por categoría del periodo elegido.',
+      'En la gráfica de tendencia (vista Analíticas) toca cualquier punto: se queda marcado y debajo ves los ingresos, gastos y balance de ese día. Tócalo otra vez o pulsa la X para soltarlo.',
       'Desliza hacia abajo para actualizar los datos.',
     ],
   );
