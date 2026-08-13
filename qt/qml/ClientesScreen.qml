@@ -16,6 +16,7 @@ Item {
         if (stack.depth > 1) { stack.pop(); return true }
         return false
     }
+    function abrirNuevoCliente() { stack.push(formComp) }
 
     StackView {
         id: stack

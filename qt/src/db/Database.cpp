@@ -107,7 +107,9 @@ void Database::createTables()
             monto REAL NOT NULL,
             categoria TEXT NOT NULL,
             fecha TEXT NOT NULL,
-            notas TEXT
+            notas TEXT,
+            producto_id INTEGER,
+            FOREIGN KEY(producto_id) REFERENCES productos(id)
         ))"),
         // Productos (Inventario)
         QStringLiteral(R"(CREATE TABLE productos (
@@ -120,6 +122,20 @@ void Database::createTables()
             fecha_compra TEXT,
             proveedor TEXT,
             fecha_creacion TEXT
+        ))"),
+        // Movimientos de inventario (auditoría de entradas/salidas/ajustes)
+        QStringLiteral(R"(CREATE TABLE movimientos_inventario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            producto_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            cantidad INTEGER NOT NULL,
+            costo_unitario REAL,
+            motivo TEXT NOT NULL,
+            gasto_id INTEGER,
+            fecha TEXT NOT NULL,
+            notas TEXT,
+            FOREIGN KEY(producto_id) REFERENCES productos(id),
+            FOREIGN KEY(gasto_id) REFERENCES gastos(id)
         ))"),
         // Posts de redes sociales
         QStringLiteral(R"(CREATE TABLE posts_redes (

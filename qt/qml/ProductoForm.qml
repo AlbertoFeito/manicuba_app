@@ -10,6 +10,9 @@ Page {
     id: page
     property var producto: ({})
     readonly property bool esEdicion: producto && producto.id !== undefined
+    // Al crear con stock inicial pagado, decide si genera el gasto en
+    // Finanzas (compra real) o no (producto que ya se tenía).
+    property bool registrarGasto: true
 
     header: ToolBar {
         Material.background: Theme.primary
@@ -86,10 +89,12 @@ Page {
                 spacing: Theme.padding
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Text { text: "Stock actual *"; font.pixelSize: 13; color: Theme.textSecondary }
+                    Text { text: page.esEdicion ? "Stock actual" : "Stock inicial *"; font.pixelSize: 13; color: Theme.textSecondary }
                     TextField {
                         id: fStock
                         Layout.fillWidth: true
+                        readOnly: page.esEdicion
+                        opacity: page.esEdicion ? 0.6 : 1
                         text: page.producto.cantidadStock !== undefined ? String(page.producto.cantidadStock) : "0"
                         inputMethodHints: Qt.ImhDigitsOnly
                         validator: IntValidator { bottom: 0; top: 999999 }
@@ -114,11 +119,49 @@ Page {
             TextField {
                 id: fCosto
                 Layout.fillWidth: true
+                readOnly: page.esEdicion
+                opacity: page.esEdicion ? 0.6 : 1
                 text: page.producto.costoUnitario !== undefined ? String(page.producto.costoUnitario) : ""
                 placeholderText: "0.00"
                 inputMethodHints: Qt.ImhFormattedNumbersOnly
                 validator: DoubleValidator { bottom: 0; decimals: 2; notation: DoubleValidator.StandardNotation }
                 Material.accent: Theme.primary
+            }
+
+            Text {
+                visible: page.esEdicion
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                color: Theme.textSecondary
+                text: "El stock y el costo se cambian desde Inventario, con \"Registrar compra\", \"Descontar\" o \"Corregir stock\". Así queda el rastro y las finanzas cuadran."
+            }
+
+            AppCard {
+                Layout.fillWidth: true
+                visible: !page.esEdicion && (parseInt(fStock.text) || 0) > 0 && (parseFloat(fCosto.text) || 0) > 0
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 4
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text { text: "Registrar el gasto en Finanzas"; font.pixelSize: 13; color: Theme.textPrimary; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+                        Switch {
+                            checked: page.registrarGasto
+                            onToggled: page.registrarGasto = checked
+                            Material.accent: Theme.primary
+                        }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: 11
+                        color: Theme.textSecondary
+                        text: page.registrarGasto
+                              ? "Se creará un gasto de " + AppConfig.moneda((parseInt(fStock.text) || 0) * (parseFloat(fCosto.text) || 0)) + " por esta compra"
+                              : "No se creará gasto: es producto que ya tenías"
+                    }
+                }
             }
 
             Text { text: "Proveedor"; font.pixelSize: 13; color: Theme.textSecondary }
@@ -133,6 +176,11 @@ Page {
                 id: error
                 visible: false
                 text: "Completa nombre, stock, mínimo y un costo válido."
+                color: Theme.error; font.pixelSize: 13; Layout.fillWidth: true; wrapMode: Text.WordWrap
+            }
+            Text {
+                id: errorDuplicado
+                visible: false
                 color: Theme.error; font.pixelSize: 13; Layout.fillWidth: true; wrapMode: Text.WordWrap
             }
         }
@@ -157,9 +205,20 @@ Page {
 
     function guardar() {
         var costo = parseFloat(fCosto.text)
+        error.visible = false
+        errorDuplicado.visible = false
         if (fNombre.text.trim().length === 0 || isNaN(costo) || costo < 0
             || fStock.text.length === 0 || fMinimo.text.length === 0) {
             error.visible = true
+            return
+        }
+        var duplicado = Inventario.buscarPorNombreYCategoria(
+            fNombre.text.trim(), cbCategoria.currentText,
+            page.esEdicion ? page.producto.id : -1)
+        if (duplicado && duplicado.id !== undefined) {
+            errorDuplicado.text = "Ya tienes \"" + duplicado.nombre + "\" en " + duplicado.categoria
+                                   + ". Para sumarle stock usa el botón + en ese producto."
+            errorDuplicado.visible = true
             return
         }
         var datos = {
@@ -174,7 +233,7 @@ Page {
             datos.id = page.producto.id
             Inventario.actualizar(datos)
         } else {
-            Inventario.crear(datos)
+            Inventario.crear(datos, page.registrarGasto)
         }
         page.StackView.view.pop()
     }
@@ -216,12 +275,17 @@ Page {
         id: confirmar
         anchors.centerIn: parent
         modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 360)
         title: "Eliminar producto"
         footer: DialogButtonBox {
             Button { text: "Cancelar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
             Button { text: "Eliminar"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole; Material.foreground: Theme.error }
         }
-        Label { text: "¿Eliminar este producto del inventario?" }
+        Label {
+            width: confirmar.availableWidth
+            wrapMode: Text.WordWrap
+            text: "¿Eliminar este producto del inventario?\n\nSe borra el producto y su historial. Los gastos de sus compras se quedan en Finanzas, porque ese dinero salió de verdad."
+        }
         onAccepted: {
             Inventario.eliminar(page.producto.id)
             page.StackView.view.pop()

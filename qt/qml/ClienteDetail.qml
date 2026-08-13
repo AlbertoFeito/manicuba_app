@@ -70,6 +70,10 @@ Page {
                     icono: "✉️"; texto: "SMS"
                     onClicked: Qt.openUrlExternally("smsto:" + page.cliente.telefono)
                 }
+                Contacto {
+                    icono: "📋"; texto: "Copiar"
+                    onClicked: { Redes.copiar(page.cliente.telefono); toastCopiado.open() }
+                }
             }
 
             AppCard {
@@ -148,8 +152,36 @@ Page {
         }
         Label { text: "¿Seguro que deseas eliminar a " + (page.cliente.nombre || "") + "?" }
         onAccepted: {
-            Clientes.eliminar(page.clienteId)
-            page.StackView.view.pop()
+            if (Clientes.eliminar(page.clienteId))
+                page.StackView.view.pop()
+            else
+                avisoNoSePuede.open()
+        }
+    }
+
+    Popup {
+        id: toastCopiado
+        x: (page.width - width) / 2
+        y: page.height - height - Theme.paddingLarge * 3
+        timeout: 1500
+        closePolicy: Popup.NoAutoClose
+        background: Rectangle { color: "#333333"; radius: 8 }
+        contentItem: Label { text: "Teléfono copiado"; color: "white"; padding: 10 }
+    }
+
+    Dialog {
+        id: avisoNoSePuede
+        anchors.centerIn: parent
+        modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 340)
+        title: "No se puede eliminar"
+        footer: DialogButtonBox {
+            Button { text: "Entendido"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole }
+        }
+        Label {
+            width: avisoNoSePuede.availableWidth
+            wrapMode: Text.WordWrap
+            text: "Este cliente tiene citas completadas en su historial, así que no se puede eliminar."
         }
     }
 

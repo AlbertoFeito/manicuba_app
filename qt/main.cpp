@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     auto *clientes = new ClienteService(&app);
     auto *servicios = new ServicioService(&app);
     auto *finanzas = new FinanzasService(&app);
-    auto *inventario = new InventarioService(&app);
+    auto *inventario = new InventarioService(finanzas, &app);
     auto *redes = new RedesService(&app);
     auto *fotos = new FotoService(&app);
     auto *citas = new CitaService(finanzas, clientes, &app);

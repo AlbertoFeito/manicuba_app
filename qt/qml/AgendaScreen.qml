@@ -13,6 +13,7 @@ Item {
     id: root
 
     function abrirHistorial() { stack.push(histComp) }
+    function abrirNuevaCita() { stack.push(citaFormComp) }
 
     // Usado por el botón atrás de Android (ver Main.qml): si hay algo
     // apilado (formulario, historial) lo cierra y devuelve true; si ya

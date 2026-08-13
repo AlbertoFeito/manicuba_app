@@ -71,6 +71,7 @@ qt_add_qml_module(manicuba
         qml/GastoForm.qml
         qml/InventarioScreen.qml
         qml/ProductoForm.qml
+        qml/MovimientosScreen.qml
         qml/RedesScreen.qml
         qml/PostForm.qml
         qml/GaleriaScreen.qml

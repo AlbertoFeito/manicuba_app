@@ -84,6 +84,13 @@ bool ClienteService::actualizar(const QVariantMap &datos)
 
 bool ClienteService::eliminar(int id)
 {
+    // No se borra un cliente con citas completadas: se perdería su historial.
+    QSqlQuery check = Database::instance().exec(
+        QStringLiteral("SELECT COUNT(*) FROM citas WHERE cliente_id = ? AND estado = 'completada'"),
+        {id});
+    if (check.next() && check.value(0).toInt() > 0)
+        return false;
+
     QSqlQuery q = Database::instance().exec(
         QStringLiteral("DELETE FROM clientes WHERE id = ?"), {id});
     const bool ok = q.numRowsAffected() > 0;

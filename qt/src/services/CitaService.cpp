@@ -126,6 +126,13 @@ bool CitaService::actualizar(const QVariantMap &datos)
 
 bool CitaService::eliminar(int id)
 {
+    // Una cita completada ya generó su ingreso: borrarla se llevaría el
+    // historial de facturación por delante. Se protege aquí, no solo en la UI.
+    QSqlQuery info = Database::instance().exec(
+        QStringLiteral("SELECT estado FROM citas WHERE id = ?"), {id});
+    if (info.next() && info.value(0).toString() == QStringLiteral("completada"))
+        return false;
+
     // Elimina también el ingreso asociado, si lo hubiera.
     m_finanzas->eliminarIngresosPorCita(id);
     QSqlQuery q = Database::instance().exec(

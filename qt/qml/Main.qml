@@ -236,7 +236,30 @@ ApplicationWindow {
                     url: "qrc:/qt/qml/ManiCuba/qml/HomeScreen.qml"
                     Connections {
                         target: homeTab.item
-                        function onIrA(indice) { win.navIndex = indice }
+                        function onNuevaCita() {
+                            win.navIndex = 1
+                            agendaTab.activar()
+                            if (agendaTab.item)
+                                agendaTab.item.abrirNuevaCita()
+                        }
+                        function onNuevoCliente() {
+                            win.navIndex = 2
+                            clientesTab.activar()
+                            if (clientesTab.item)
+                                clientesTab.item.abrirNuevoCliente()
+                        }
+                        function onRegistrarGasto() {
+                            win.navIndex = 3
+                            finanzasTab.activar()
+                            if (finanzasTab.item)
+                                finanzasTab.item.abrirNuevoGasto()
+                        }
+                        function onNuevoPost() {
+                            win.navIndex = 6
+                            redesTab.activar()
+                            if (redesTab.item)
+                                redesTab.item.abrirNuevoPost()
+                        }
                     }
                 }
                 Pantalla { id: agendaTab; indice: 1; url: "qrc:/qt/qml/ManiCuba/qml/AgendaScreen.qml" }

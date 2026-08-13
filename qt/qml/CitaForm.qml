@@ -36,7 +36,7 @@ Page {
                 Layout.fillWidth: true
             }
             ToolButton {
-                visible: page.esEdicion
+                visible: page.esEdicion && page.cita.estado !== "completada"
                 text: "🗑"; font.pixelSize: 16
                 onClicked: confirmar.open()
             }
@@ -221,8 +221,26 @@ Page {
         }
         Label { text: "¿Eliminar esta cita? Si tenía ingreso asociado, también se eliminará." }
         onAccepted: {
-            Citas.eliminar(page.cita.id)
-            page.StackView.view.pop()
+            if (Citas.eliminar(page.cita.id))
+                page.StackView.view.pop()
+            else
+                avisoNoSePuede.open()
+        }
+    }
+
+    Dialog {
+        id: avisoNoSePuede
+        anchors.centerIn: parent
+        modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 340)
+        title: "No se puede eliminar"
+        footer: DialogButtonBox {
+            Button { text: "Entendido"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole }
+        }
+        Label {
+            width: avisoNoSePuede.availableWidth
+            wrapMode: Text.WordWrap
+            text: "Esta cita ya está completada y forma parte del historial de ingresos, así que no se puede eliminar."
         }
     }
 }

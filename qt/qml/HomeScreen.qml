@@ -8,7 +8,10 @@ import ManiCuba
 // Portado de la pestaña "Inicio" de lib/screens/home_screen.dart.
 Item {
     id: root
-    signal irA(int indice)
+    signal nuevaCita()
+    signal nuevoCliente()
+    signal registrarGasto()
+    signal nuevoPost()
 
     function refrescar() {
         stCitas.valor = Citas.totalHoy()
@@ -90,22 +93,22 @@ Item {
                 AccionRapida {
                     Layout.fillWidth: true
                     icono: "➕"; texto: "Nueva cita"
-                    onClicked: root.irA(1)
+                    onClicked: root.nuevaCita()
                 }
                 AccionRapida {
                     Layout.fillWidth: true
                     icono: "🧑"; texto: "Nuevo cliente"
-                    onClicked: root.irA(2)
+                    onClicked: root.nuevoCliente()
                 }
                 AccionRapida {
                     Layout.fillWidth: true
-                    icono: "💰"; texto: "Finanzas"
-                    onClicked: root.irA(3)
+                    icono: "🧾"; texto: "Registrar gasto"
+                    onClicked: root.registrarGasto()
                 }
                 AccionRapida {
                     Layout.fillWidth: true
-                    icono: "💅"; texto: "Servicios"
-                    onClicked: root.irA(4)
+                    icono: "📣"; texto: "Post redes"
+                    onClicked: root.nuevoPost()
                 }
             }
         }

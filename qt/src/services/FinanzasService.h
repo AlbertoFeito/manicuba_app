@@ -25,9 +25,14 @@ public:
 
     // ===== Gastos (CRUD) =====
     Q_INVOKABLE QVariantList obtenerGastos() const;
+    // datos puede traer "productoId": marca el gasto como generado por una
+    // compra de Inventario (deja de ser editable a mano en Finanzas).
     Q_INVOKABLE int registrarGasto(const QVariantMap &datos);
     Q_INVOKABLE bool actualizarGasto(const QVariantMap &datos);
     Q_INVOKABLE bool eliminarGasto(int id);
+    // Corta el enlace de los gastos de un producto sin borrarlos: ese dinero
+    // salió de verdad y sigue contando en Finanzas como gasto manual.
+    Q_INVOKABLE bool desvincularGastosDeProducto(int productoId);
 
     // ===== Totales rápidos (panel de Inicio) =====
     Q_INVOKABLE double ingresoHoy() const;

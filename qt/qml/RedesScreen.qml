@@ -14,6 +14,7 @@ Item {
         if (stack.depth > 1) { stack.pop(); return true }
         return false
     }
+    function abrirNuevoPost() { stack.push(formComp) }
 
     StackView {
         id: stack

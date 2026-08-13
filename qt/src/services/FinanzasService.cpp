@@ -92,7 +92,8 @@ bool FinanzasService::eliminarIngresosPorCita(int citaId)
 QVariantList FinanzasService::obtenerGastos() const
 {
     QSqlQuery q = Database::instance().exec(QStringLiteral(
-        "SELECT id, concepto, monto, categoria, fecha, notas FROM gastos ORDER BY fecha DESC"));
+        "SELECT id, concepto, monto, categoria, fecha, notas, producto_id AS productoId "
+        "FROM gastos ORDER BY fecha DESC"));
     return Database::rows(q);
 }
 
@@ -102,14 +103,19 @@ int FinanzasService::registrarGasto(const QVariantMap &datos)
     if (fecha.isEmpty())
         fecha = QDateTime::currentDateTime().toString(Qt::ISODate);
 
+    QVariant productoId;
+    if (datos.value(QStringLiteral("productoId")).toInt() > 0)
+        productoId = datos.value(QStringLiteral("productoId")).toInt();
+
     QSqlQuery q = Database::instance().exec(
-        QStringLiteral("INSERT INTO gastos (concepto, monto, categoria, fecha, notas) "
-                       "VALUES (?, ?, ?, ?, ?)"),
+        QStringLiteral("INSERT INTO gastos (concepto, monto, categoria, fecha, notas, producto_id) "
+                       "VALUES (?, ?, ?, ?, ?, ?)"),
         {datos.value(QStringLiteral("concepto")),
          datos.value(QStringLiteral("monto")),
          datos.value(QStringLiteral("categoria")),
          fecha,
-         datos.value(QStringLiteral("notas"))});
+         datos.value(QStringLiteral("notas")),
+         productoId});
     const QVariant nuevoId = q.lastInsertId();
     if (!nuevoId.isValid())
         return -1;
@@ -140,6 +146,16 @@ bool FinanzasService::eliminarGasto(int id)
 {
     QSqlQuery q = Database::instance().exec(
         QStringLiteral("DELETE FROM gastos WHERE id = ?"), {id});
+    const bool ok = q.numRowsAffected() > 0;
+    if (ok)
+        emit cambiado();
+    return ok;
+}
+
+bool FinanzasService::desvincularGastosDeProducto(int productoId)
+{
+    QSqlQuery q = Database::instance().exec(
+        QStringLiteral("UPDATE gastos SET producto_id = NULL WHERE producto_id = ?"), {productoId});
     const bool ok = q.numRowsAffected() > 0;
     if (ok)
         emit cambiado();
@@ -290,13 +306,16 @@ QVariantList FinanzasService::movimientos(const QString &periodo) const
         const QDateTime f = parseFecha(m.value(QStringLiteral("fecha")));
         if (!enPeriodo(f, periodo, ahora))
             continue;
+        // Un gasto generado por una compra de Inventario no se edita/borra
+        // aquí: hay que deshacer la compra desde el historial del producto.
+        const bool deInventario = m.value(QStringLiteral("productoId")).toInt() > 0;
         QVariantMap mov = m;
         mov.insert(QStringLiteral("tipo"), QStringLiteral("gasto"));
         mov.insert(QStringLiteral("esIngreso"), false);
         mov.insert(QStringLiteral("etiqueta"),
                    m.value(QStringLiteral("concepto")).toString() + QStringLiteral(" · ") +
                        m.value(QStringLiteral("categoria")).toString());
-        mov.insert(QStringLiteral("editable"), true);
+        mov.insert(QStringLiteral("editable"), !deInventario);
         lista.append(mov);
     }
 

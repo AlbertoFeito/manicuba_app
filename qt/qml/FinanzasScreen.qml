@@ -23,6 +23,7 @@ Item {
         if (stack.depth > 1) { stack.pop(); return true }
         return false
     }
+    function abrirNuevoGasto() { stack.push(gastoFormComp) }
 
     StackView {
         id: stack
