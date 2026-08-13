@@ -25,6 +25,7 @@ qt_add_executable(manicuba
     src/services/FotoService.cpp
     src/services/CitaService.cpp
     src/services/CamaraService.cpp
+    src/services/CompartirService.cpp
 )
 
 target_include_directories(manicuba PRIVATE src)

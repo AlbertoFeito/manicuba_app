@@ -25,6 +25,7 @@
 #include "services/FotoService.h"
 #include "services/InventarioService.h"
 #include "services/CamaraService.h"
+#include "services/CompartirService.h"
 #include "services/LicenciaService.h"
 #include "services/RedesService.h"
 #include "services/ServicioService.h"
@@ -134,6 +135,7 @@ int main(int argc, char *argv[])
     auto *fotos = new FotoService(&app);
     auto *citas = new CitaService(finanzas, clientes, &app);
     auto *camara = new CamaraService(&app);
+    auto *compartir = new CompartirService(&app);
 
     licencia->refrescar();
 
@@ -159,6 +161,7 @@ int main(int argc, char *argv[])
     ctx->setContextProperty(QStringLiteral("Fotos"), fotos);
     ctx->setContextProperty(QStringLiteral("Citas"), citas);
     ctx->setContextProperty(QStringLiteral("Camara"), camara);
+    ctx->setContextProperty(QStringLiteral("Compartir"), compartir);
 
     bool creado = false;
     QObject::connect(

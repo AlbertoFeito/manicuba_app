@@ -135,6 +135,12 @@ Item {
             anchors.margins: Theme.padding
             spacing: Theme.paddingSmall
             RoundButton {
+                text: "📤"; font.pixelSize: 16
+                visible: Qt.platform.os === "android"
+                background: Rectangle { radius: width / 2; color: Theme.surface }
+                onClicked: Compartir.compartirFoto(visor.foto.rutaFoto)
+            }
+            RoundButton {
                 text: "🗑"; font.pixelSize: 18
                 background: Rectangle { radius: width / 2; color: Theme.error }
                 onClicked: { Fotos.eliminar(visor.foto.id); visor.close() }

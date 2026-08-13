@@ -8,25 +8,13 @@
 #ifdef Q_OS_ANDROID
 #include <QJniEnvironment>
 #include <QtCore/qcoreapplication_platform.h>
+#include "services/JniUtil.h"
+using JniUtil::limpiarExcepcion;
 #endif
 
 CamaraService::CamaraService(QObject *parent) : QObject(parent) {}
 
 #ifdef Q_OS_ANDROID
-
-namespace {
-
-// Limpia una excepción Java pendiente para no dejar el JNIEnv en un estado
-// que rompería la siguiente llamada (p. ej. si openInputStream lanza
-// SecurityException en algún fabricante raro).
-void limpiarExcepcion(QJniEnvironment &env)
-{
-    if (env->ExceptionCheck()) {
-        env->ExceptionClear();
-    }
-}
-
-} // namespace
 
 bool CamaraService::tomarFoto()
 {
