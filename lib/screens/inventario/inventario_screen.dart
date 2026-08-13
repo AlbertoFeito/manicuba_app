@@ -144,21 +144,22 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   Future<void> _corregirStock(Producto producto) async {
-    final nuevoStock = await mostrarDialogoCorreccion(context, producto);
-    if (nuevoStock == null) {
+    final datos = await mostrarDialogoCorreccion(context, producto);
+    if (datos == null) {
       return;
     }
-    final diferencia = await _inventarioService.registrarCorreccion(
+    final cambio = await _inventarioService.registrarCorreccion(
       productoId: producto.id!,
-      nuevoStock: nuevoStock,
+      nuevoStock: datos.stock,
+      nuevoCosto: datos.costoUnitario,
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            diferencia == 0
-                ? 'El stock ya estaba correcto'
-                : 'Stock corregido a $nuevoStock',
+            cambio
+                ? '${producto.nombre} corregido'
+                : 'Ya estaba correcto, no cambió nada',
           ),
         ),
       );

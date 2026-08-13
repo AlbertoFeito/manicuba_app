@@ -81,6 +81,32 @@ class InventarioService {
     return map != null ? Producto.fromMap(map) : null;
   }
 
+  /// Busca un producto con el mismo nombre y categoría, ignorando mayúsculas
+  /// y espacios sobrantes.
+  ///
+  /// Dos fichas del mismo producto parten el stock en dos y ninguna refleja
+  /// lo que hay de verdad, así que el formulario las rechaza. [exceptoId]
+  /// deja fuera el propio producto al editarlo.
+  Future<Producto?> buscarPorNombreYCategoria(
+    String nombre,
+    String categoria, {
+    int? exceptoId,
+  }) async {
+    final buscadoNombre = nombre.trim().toLowerCase();
+    final buscadaCategoria = categoria.trim().toLowerCase();
+    final todos = await obtenerTodos();
+    for (final producto in todos) {
+      if (producto.id == exceptoId) {
+        continue;
+      }
+      if (producto.nombre.trim().toLowerCase() == buscadoNombre &&
+          producto.categoria.trim().toLowerCase() == buscadaCategoria) {
+        return producto;
+      }
+    }
+    return null;
+  }
+
   Future<List<Producto>> obtenerPorCategoria(String categoria) async {
     final todos = await obtenerTodos();
     return todos.where((p) => p.categoria == categoria).toList();
@@ -218,42 +244,64 @@ class InventarioService {
     return descontado;
   }
 
-  /// Cuadra el stock con lo que hay de verdad después de un conteo físico.
+  /// Cuadra el stock con lo que hay de verdad después de un conteo físico, y
+  /// de paso permite arreglar el costo unitario si se tecleó mal.
+  ///
   /// No toca Finanzas: es una corrección de la cuenta, no dinero que se movió.
-  /// Devuelve la diferencia aplicada (positiva si sobraba, negativa si
-  /// faltaba), o 0 si ya estaba cuadrado.
-  Future<int> registrarCorreccion({
+  /// Si el gasto también quedó mal, hay que deshacer la compra en el historial
+  /// y volver a registrarla.
+  ///
+  /// Devuelve `true` si se aplicó algún cambio.
+  Future<bool> registrarCorreccion({
     required int productoId,
     required int nuevoStock,
+    double? nuevoCosto,
     String? notas,
   }) async {
     final producto = await obtenerPorId(productoId);
     if (producto == null) {
-      return 0;
+      return false;
     }
 
     final objetivo = nuevoStock < 0 ? 0 : nuevoStock;
     final diferencia = objetivo - producto.cantidadStock;
-    if (diferencia == 0) {
-      return 0;
+
+    final costo = (nuevoCosto != null && nuevoCosto >= 0)
+        ? nuevoCosto
+        : producto.costoUnitario;
+    // Comparación con tolerancia: son céntimos, no enteros.
+    final cambiaCosto = (costo - producto.costoUnitario).abs() > 0.001;
+
+    if (diferencia == 0 && !cambiaCosto) {
+      return false;
     }
 
     await _db.guardarMovimientoInventario(
-      producto: producto.copyWith(cantidadStock: objetivo).toMap(),
+      producto: producto
+          .copyWith(cantidadStock: objetivo, costoUnitario: costo)
+          .toMap(),
       movimiento: MovimientoInventario(
         productoId: productoId,
         tipo: AppConstants.tipoMovimientoAjuste,
         cantidad: diferencia.abs(),
         motivo: AppConstants.motivoCorreccion,
         fecha: DateTime.now(),
-        notas: notas ??
-            (diferencia > 0
-                ? 'Había $diferencia de más'
-                : 'Faltaban ${-diferencia}'),
+        notas: notas ?? _notaCorreccion(diferencia, cambiaCosto, costo),
       ).toMap(),
     );
 
-    return diferencia;
+    return true;
+  }
+
+  String _notaCorreccion(int diferencia, bool cambiaCosto, double costo) {
+    final partes = <String>[
+      if (diferencia > 0)
+        'Había $diferencia de más'
+      else if (diferencia < 0)
+        'Faltaban ${-diferencia}',
+      if (cambiaCosto) 'Costo corregido a ${costo.toStringAsFixed(2)}',
+    ];
+    return partes.join(' · ');
   }
 
   /// Resultado de intentar deshacer un movimiento.

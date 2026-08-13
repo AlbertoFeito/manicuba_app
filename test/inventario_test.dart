@@ -181,16 +181,48 @@ void main() {
     );
 
     final balanceAntes = await finanzas.balanceHoy();
-    final diferencia =
+    final cambio =
         await inventario.registrarCorreccion(productoId: id, nuevoStock: 17);
 
-    expect(diferencia, -3);
+    expect(cambio, isTrue);
     final producto = await inventario.obtenerPorId(id);
     expect(producto!.cantidadStock, 17);
     expect(await finanzas.balanceHoy(), closeTo(balanceAntes, 0.001));
 
     final gastos = await finanzas.obtenerGastosPorProducto(id);
     expect(gastos.length, 1); // sigue siendo solo el de la compra
+
+    // Sin cambios reales no se registra nada.
+    expect(
+      await inventario.registrarCorreccion(productoId: id, nuevoStock: 17),
+      isFalse,
+    );
+  });
+
+  test('Corregir el costo unitario mal tecleado no toca las finanzas',
+      () async {
+    final id = await _crearProducto(inventario, nombre: 'Cinta');
+    await inventario.registrarCompra(
+      productoId: id,
+      cantidad: 5,
+      totalPagado: 500, // se tecleó 500 en vez de 50: $100 c/u
+    );
+
+    final balanceAntes = await finanzas.balanceHoy();
+    final cambio = await inventario.registrarCorreccion(
+      productoId: id,
+      nuevoStock: 5,
+      nuevoCosto: 10,
+    );
+
+    expect(cambio, isTrue);
+    final producto = await inventario.obtenerPorId(id);
+    expect(producto!.costoUnitario, closeTo(10, 0.001));
+    expect(producto.cantidadStock, 5);
+    // El gasto queda como estaba: corregir el conteo no reescribe el dinero.
+    expect(await finanzas.balanceHoy(), closeTo(balanceAntes, 0.001));
+    expect((await finanzas.obtenerGastosPorProducto(id)).first.monto,
+        closeTo(500, 0.001));
   });
 
   test('Deshacer una compra borra su gasto y devuelve el stock', () async {
@@ -255,6 +287,36 @@ void main() {
     expect(
       await inventario.consumidoEnPeriodo(desde, hasta) - consumidoAntes,
       2,
+    );
+  });
+
+  test('Detecta productos repetidos por nombre y categoría', () async {
+    // La base de test se comparte entre corridas: nombre único para que el
+    // choque sea el que provoca este test y no uno anterior.
+    final nombre = 'Baba ${DateTime.now().microsecondsSinceEpoch}';
+    final id = await _crearProducto(inventario, nombre: nombre);
+
+    // Mismo producto aunque cambien mayúsculas y sobren espacios.
+    final encontrado = await inventario.buscarPorNombreYCategoria(
+      '  ${nombre.toUpperCase()} ',
+      'esmaltes',
+    );
+    expect(encontrado?.id, id);
+
+    // Al editar, un producto no es duplicado de sí mismo.
+    expect(
+      await inventario.buscarPorNombreYCategoria(
+        nombre,
+        'Esmaltes',
+        exceptoId: id,
+      ),
+      isNull,
+    );
+
+    // El mismo nombre en otra categoría sí se permite.
+    expect(
+      await inventario.buscarPorNombreYCategoria(nombre, 'Geles'),
+      isNull,
     );
   });
 

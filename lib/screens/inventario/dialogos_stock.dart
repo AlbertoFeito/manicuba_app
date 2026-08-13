@@ -56,12 +56,22 @@ Future<DatosSalida?> mostrarDialogoSalida(
   );
 }
 
-/// Pregunta cuánto hay de verdad tras un conteo físico.
-Future<int?> mostrarDialogoCorreccion(
+/// Datos de una corrección de conteo.
+class DatosCorreccion {
+  const DatosCorreccion({required this.stock, required this.costoUnitario});
+
+  final int stock;
+  final double costoUnitario;
+}
+
+/// Pregunta cuánto hay de verdad tras un conteo físico, y permite arreglar el
+/// costo unitario si se tecleó mal (al editar el producto es de solo lectura,
+/// porque normalmente lo calculan las compras).
+Future<DatosCorreccion?> mostrarDialogoCorreccion(
   BuildContext context,
   Producto producto,
 ) {
-  return showDialog<int>(
+  return showDialog<DatosCorreccion>(
     context: context,
     builder: (_) => _DialogoCorreccion(producto: producto),
   );
@@ -362,6 +372,7 @@ class _DialogoCorreccion extends StatefulWidget {
 class _DialogoCorreccionState extends State<_DialogoCorreccion> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _stockCtrl;
+  late final TextEditingController _costoCtrl;
 
   @override
   void initState() {
@@ -369,11 +380,15 @@ class _DialogoCorreccionState extends State<_DialogoCorreccion> {
     _stockCtrl = TextEditingController(
       text: widget.producto.cantidadStock.toString(),
     );
+    _costoCtrl = TextEditingController(
+      text: widget.producto.costoUnitario.toStringAsFixed(2),
+    );
   }
 
   @override
   void dispose() {
     _stockCtrl.dispose();
+    _costoCtrl.dispose();
     super.dispose();
   }
 
@@ -381,7 +396,13 @@ class _DialogoCorreccionState extends State<_DialogoCorreccion> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    Navigator.of(context).pop(int.parse(_stockCtrl.text.trim()));
+    Navigator.of(context).pop(
+      DatosCorreccion(
+        stock: int.parse(_stockCtrl.text.trim()),
+        costoUnitario:
+            double.parse(_costoCtrl.text.trim().replaceAll(',', '.')),
+      ),
+    );
   }
 
   @override
@@ -414,6 +435,27 @@ class _DialogoCorreccionState extends State<_DialogoCorreccion> {
                 final n = int.tryParse((value ?? '').trim());
                 if (n == null || n < 0) {
                   return 'Cantidad inválida';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _costoCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Costo unitario *',
+                prefixIcon: Icon(Icons.attach_money),
+                helperText: 'Corrígelo solo si lo tecleaste mal',
+              ),
+              validator: (value) {
+                final n = double.tryParse(
+                  (value ?? '').trim().replaceAll(',', '.'),
+                );
+                if (n == null || n < 0) {
+                  return 'Costo inválido';
                 }
                 return null;
               },

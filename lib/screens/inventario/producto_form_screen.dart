@@ -103,9 +103,36 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     }
     setState(() => _guardando = true);
 
-    var categoriaFinal = _categoria;
+    final categoriaFinal = _categoria == 'Otros'
+        ? _nuevaCategoriaCtrl.text.trim()
+        : _categoria;
+
+    // Un mismo producto repetido parte el stock en dos fichas y ninguna
+    // refleja lo que hay de verdad. Se comprueba antes de guardar la
+    // categoría nueva, para no dejarla registrada si el alta se rechaza.
+    final duplicado = await _inventarioService.buscarPorNombreYCategoria(
+      _nombreCtrl.text,
+      categoriaFinal,
+      exceptoId: widget.producto?.id,
+    );
+    if (duplicado != null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _guardando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 6),
+          content: Text(
+            'Ya tienes "${duplicado.nombre}" en ${duplicado.categoria}. '
+            'Para sumarle stock usa el botón + en ese producto.',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (_categoria == 'Otros') {
-      categoriaFinal = _nuevaCategoriaCtrl.text.trim();
       await _categoriaService.agregarCategoria(categoriaFinal);
     }
 
