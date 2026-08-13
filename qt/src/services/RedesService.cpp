@@ -73,12 +73,13 @@ bool RedesService::actualizar(const QVariantMap &datos)
         return false;
     QSqlQuery q = Database::instance().exec(
         QStringLiteral("UPDATE posts_redes SET titulo = ?, contenido = ?, emojis = ?, "
-                       "hashtags = ?, tipo = ?, plataforma = ?, notas = ? WHERE id = ?"),
+                       "hashtags = ?, tipo = ?, foto_ids = ?, plataforma = ?, notas = ? WHERE id = ?"),
         {datos.value(QStringLiteral("titulo")),
          datos.value(QStringLiteral("contenido")),
          datos.value(QStringLiteral("emojis")),
          datos.value(QStringLiteral("hashtags")),
          datos.value(QStringLiteral("tipo")),
+         datos.value(QStringLiteral("fotoIds")),
          datos.value(QStringLiteral("plataforma")),
          datos.value(QStringLiteral("notas")),
          datos.value(QStringLiteral("id"))});

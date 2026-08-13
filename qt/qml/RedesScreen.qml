@@ -113,7 +113,9 @@ Item {
                             }
                         }
                         Text {
+                            readonly property int numFotos: (modelData.fotoIds || "").split(",").filter(function (s) { return s.trim().length > 0 }).length
                             text: (modelData.tipo || "") + " · " + (modelData.plataforma || "")
+                                  + (numFotos > 0 ? " · 📷 " + numFotos + " foto" + (numFotos > 1 ? "s" : "") : "")
                             font.pixelSize: 12; color: Theme.textSecondary
                         }
                         Text {

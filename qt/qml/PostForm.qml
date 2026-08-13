@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import ManiCuba
 
 // Alta/edición de post con sugerencias de emojis y hashtags.
@@ -11,6 +12,41 @@ Page {
     property var post: ({})
     readonly property bool esEdicion: post && post.id !== undefined
     readonly property var tipos: ["oferta", "promocion", "trabajo", "testimonio", "educativo"]
+
+    // IDs de las fotos adjuntas al post, en el orden en que se agregaron.
+    property var fotoIdsSel: parseFotoIds(post.fotoIds)
+    function parseFotoIds(s) {
+        if (!s)
+            return []
+        return String(s).split(",").map(function (x) { return parseInt(x.trim()) })
+                         .filter(function (n) { return !isNaN(n) })
+    }
+    function fotosSeleccionadas() {
+        var todas = Fotos.obtenerTodas()
+        return page.fotoIdsSel.map(function (id) {
+            return todas.find(function (f) { return f.id === id })
+        }).filter(function (f) { return f !== undefined })
+    }
+    function quitarFoto(id) {
+        page.fotoIdsSel = page.fotoIdsSel.filter(function (i) { return i !== id })
+    }
+    function agregarFotoId(id) {
+        if (id > 0 && page.fotoIdsSel.indexOf(id) === -1)
+            page.fotoIdsSel = page.fotoIdsSel.concat([id])
+    }
+    // La app de Cámara del sistema corre fuera del proceso: se recoge la
+    // foto (si la hubo) en cuanto la app recupera el foco. Mismo patrón que
+    // GaleriaScreen.qml.
+    Connections {
+        target: Qt.application
+        function onStateChanged() {
+            if (Qt.application.state === Qt.ApplicationActive) {
+                const ruta = Camara.recogerCaptura()
+                if (ruta)
+                    page.agregarFotoId(Fotos.guardarDesdeArchivo(ruta))
+            }
+        }
+    }
 
     header: ToolBar {
         Material.background: Theme.primary
@@ -137,6 +173,84 @@ Page {
                 }
             }
 
+            Text { text: "Fotos del post"; font.pixelSize: 13; color: Theme.textSecondary }
+            Text {
+                visible: page.fotoIdsSel.length === 0
+                text: "Sin fotos (opcional)"
+                font.pixelSize: 12; color: Theme.textSecondary
+            }
+            ListView {
+                visible: page.fotoIdsSel.length > 0
+                Layout.fillWidth: true
+                Layout.preferredHeight: 88
+                orientation: ListView.Horizontal
+                spacing: Theme.paddingSmall
+                model: page.fotosSeleccionadas()
+
+                delegate: Item {
+                    required property var modelData
+                    width: 80; height: 80
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radius
+                        color: Theme.surfaceAlt
+                        clip: true
+                        Image {
+                            anchors.fill: parent
+                            source: modelData.url
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                        }
+                    }
+                    RoundButton {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 2
+                        implicitWidth: 22; implicitHeight: 22
+                        text: "✕"; font.pixelSize: 11
+                        background: Rectangle { radius: width / 2; color: "#000000aa" }
+                        contentItem: Text { text: "✕"; color: "white"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                        onClicked: page.quitarFoto(modelData.id)
+                    }
+                }
+            }
+            Button {
+                text: "➕  Agregar fotos"
+                flat: true
+                Material.foreground: Theme.primary
+                onClicked: menuAgregarFotos.open()
+            }
+
+            Menu {
+                id: menuAgregarFotos
+                MenuItem {
+                    text: "📷  Tomar foto"
+                    visible: Qt.platform.os === "android"
+                    height: visible ? implicitHeight : 0
+                    onTriggered: Camara.tomarFoto()
+                }
+                MenuItem {
+                    text: "🖼  Elegir de la galería del teléfono"
+                    onTriggered: selectorArchivo.open()
+                }
+                MenuItem {
+                    text: "🗂  Elegir de la Galería de trabajos"
+                    onTriggered: {
+                        if (Fotos.obtenerTodas().length === 0)
+                            avisoSinFotos.open()
+                        else
+                            selectorGaleria.abrir()
+                    }
+                }
+            }
+
+            FileDialog {
+                id: selectorArchivo
+                title: "Elegir imagen"
+                nameFilters: ["Imágenes (*.png *.jpg *.jpeg *.webp *.bmp)"]
+                onAccepted: page.agregarFotoId(Fotos.guardarDesdeArchivo(selectedFile))
+            }
+
             // Vista previa
             AppCard {
                 Layout.fillWidth: true
@@ -197,6 +311,7 @@ Page {
             emojis: fEmojis.text.trim(),
             hashtags: fHashtags.text.trim(),
             tipo: page.tipos[cbTipo.currentIndex],
+            fotoIds: page.fotoIdsSel.join(","),
             plataforma: AppConfig.plataformasSociales[cbPlataforma.currentIndex],
             notas: ""
         }
@@ -207,5 +322,111 @@ Page {
             Redes.crear(datos)
         }
         page.StackView.view.pop()
+    }
+
+    Dialog {
+        id: avisoSinFotos
+        anchors.centerIn: parent
+        modal: true
+        width: Math.min((Overlay.overlay ? Overlay.overlay.width : 400) - Theme.padding * 2, 340)
+        title: "Galería de trabajos"
+        footer: DialogButtonBox {
+            Button { text: "Entendido"; flat: true; DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole }
+        }
+        Label {
+            width: avisoSinFotos.availableWidth
+            wrapMode: Text.WordWrap
+            text: "Aún no tienes fotos en la Galería de trabajos. Agrega alguna desde la pestaña Galería primero."
+        }
+    }
+
+    // Selector en cuadrícula de la Galería de trabajos, con multi-selección.
+    Popup {
+        id: selectorGaleria
+        anchors.centerIn: Overlay.overlay
+        width: parent.width
+        height: parent.height * 0.85
+        modal: true
+        padding: 0
+        property var seleccionTemp: []
+
+        function abrir() {
+            seleccionTemp = page.fotoIdsSel.slice()
+            open()
+        }
+
+        background: Rectangle { color: Theme.background; radius: Theme.radius }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: Theme.padding
+            spacing: Theme.paddingSmall
+
+            Text { text: "Elegir fotos"; font.pixelSize: 16; font.bold: true; color: Theme.textPrimary }
+
+            GridView {
+                id: gridSelector
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                cellWidth: Math.floor(width / Math.max(3, Math.floor(width / 110)))
+                cellHeight: cellWidth
+                model: Fotos.obtenerTodas()
+
+                delegate: Item {
+                    required property var modelData
+                    readonly property bool marcada: selectorGaleria.seleccionTemp.indexOf(modelData.id) !== -1
+                    width: gridSelector.cellWidth
+                    height: gridSelector.cellHeight
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        radius: Theme.radius
+                        color: Theme.surfaceAlt
+                        clip: true
+                        Image {
+                            anchors.fill: parent
+                            source: modelData.url
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                        }
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: marcada
+                            radius: parent.radius
+                            color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+                            Text {
+                                anchors.top: parent.top
+                                anchors.right: parent.right
+                                anchors.margins: 4
+                                text: "✓"; color: "white"; font.pixelSize: 18; font.bold: true
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                const id = modelData.id
+                                const sel = selectorGaleria.seleccionTemp
+                                const i = sel.indexOf(id)
+                                selectorGaleria.seleccionTemp = i === -1
+                                    ? sel.concat([id]) : sel.filter(function (x) { return x !== id })
+                            }
+                        }
+                    }
+                }
+            }
+
+            Button {
+                Layout.fillWidth: true
+                text: "Listo"
+                Material.background: Theme.primary
+                Material.foreground: "white"
+                background: Rectangle { color: Theme.primary; radius: 6 }
+                onClicked: {
+                    page.fotoIdsSel = selectorGaleria.seleccionTemp
+                    selectorGaleria.close()
+                }
+            }
+        }
     }
 }
