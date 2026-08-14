@@ -3,7 +3,7 @@ import 'package:path/path.dart';
 
 class DatabaseHelper {
   static const String dbName = 'manicuba.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
 
   static Database? _db;
 
@@ -29,14 +29,101 @@ class DatabaseHelper {
       path,
       version: dbVersion,
       onCreate: _onCreate,
+      onUpgrade: runMigrations,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    await _createTables(db);
+    await crearEsquema(db);
   }
 
-  Future<void> _createTables(Database db) async {
+  /// Migraciones incrementales del esquema. Se aplican en cadena, así que una
+  /// instalación vieja de cualquier versión llega al día sin perder datos.
+  /// Es público para poder probarlo con una base de prueba.
+  static Future<void> runMigrations(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await _migrarAV2(db);
+    }
+  }
+
+  /// v1 → v2: conecta el inventario con las finanzas.
+  /// Añade el enlace `gastos.producto_id`, crea el historial de movimientos
+  /// (que antes no existía: el stock era un número que se sobreescribía) y
+  /// da a cada producto ya existente su movimiento de saldo inicial.
+  ///
+  /// Es idempotente: se puede correr dos veces sin duplicar nada.
+  static Future<void> _migrarAV2(Database db) async {
+    final columnas = await db.rawQuery('PRAGMA table_info(gastos)');
+    final tieneProductoId = columnas.any((c) => c['name'] == 'producto_id');
+    if (!tieneProductoId) {
+      await db.execute('ALTER TABLE gastos ADD COLUMN producto_id INTEGER');
+    }
+
+    await db.execute(_sqlMovimientosInventario);
+
+    // Los productos que ya estaban en la app no tienen historial. Se les crea
+    // una entrada con el stock que traen para que el historial arranque de
+    // algún lado. NO genera gasto: ese dinero salió antes de esta versión y
+    // puede que ya esté anotado a mano; crearlo ahora le inflaría el mes.
+    final movimientos = Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM movimientos_inventario'),
+        ) ??
+        0;
+    if (movimientos > 0) {
+      return;
+    }
+
+    // Los literales van a propósito sin pasar por AppConstants: una migración
+    // es una foto fija del pasado y no debe cambiar si mañana se renombra una
+    // constante, o dejaría de reproducir lo que realmente se escribió.
+    final productos = await db.query('productos');
+    for (final producto in productos) {
+      final stock = (producto['cantidad_stock'] as int?) ?? 0;
+      if (stock <= 0) {
+        continue;
+      }
+      final fecha = (producto['fecha_compra'] as String?) ??
+          (producto['fecha_creacion'] as String?) ??
+          DateTime.now().toIso8601String();
+      await db.insert('movimientos_inventario', {
+        'producto_id': producto['id'],
+        'tipo': 'entrada',
+        'cantidad': stock,
+        'costo_unitario': producto['costo_unitario'],
+        'motivo': 'saldo_inicial',
+        'gasto_id': null,
+        'fecha': fecha,
+        'notas': 'Stock que ya tenías al actualizar la app',
+      });
+    }
+  }
+
+  /// Historial de entradas y salidas de inventario. Definido una sola vez
+  /// para que la creación desde cero y la migración no se desincronicen.
+  static const String _sqlMovimientosInventario = '''
+      CREATE TABLE IF NOT EXISTS movimientos_inventario (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        producto_id INTEGER NOT NULL,
+        tipo TEXT NOT NULL,
+        cantidad INTEGER NOT NULL,
+        costo_unitario REAL,
+        motivo TEXT NOT NULL,
+        gasto_id INTEGER,
+        fecha TEXT NOT NULL,
+        notas TEXT,
+        FOREIGN KEY(producto_id) REFERENCES productos(id),
+        FOREIGN KEY(gasto_id) REFERENCES gastos(id)
+      )
+    ''';
+
+  /// Crea el esquema completo de la versión actual. Es público para poder
+  /// comprobar en los tests que una instalación nueva y una migrada quedan
+  /// igual.
+  Future<void> crearEsquema(Database db) async {
     // Tabla Clientes
     await db.execute('''
       CREATE TABLE clientes (
@@ -93,6 +180,8 @@ class DatabaseHelper {
     ''');
 
     // Tabla Gastos
+    // producto_id marca los gastos generados automáticamente por una compra
+    // de inventario, igual que ingresos.cita_id marca los de una cita.
     await db.execute('''
       CREATE TABLE gastos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +189,9 @@ class DatabaseHelper {
         monto REAL NOT NULL,
         categoria TEXT NOT NULL,
         fecha TEXT NOT NULL,
-        notas TEXT
+        notas TEXT,
+        producto_id INTEGER,
+        FOREIGN KEY(producto_id) REFERENCES productos(id)
       )
     ''');
 
@@ -118,6 +209,9 @@ class DatabaseHelper {
         fecha_creacion TEXT
       )
     ''');
+
+    // Tabla Movimientos de Inventario (historial de entradas y salidas)
+    await db.execute(_sqlMovimientosInventario);
 
     // Tabla Posts Redes Sociales
     await db.execute('''
@@ -415,6 +509,29 @@ class DatabaseHelper {
     return await db.delete('gastos', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<List<Map<String, dynamic>>> getGastosByProducto(int productoId) async {
+    final db = await database;
+    return await db.query(
+      'gastos',
+      where: 'producto_id = ?',
+      whereArgs: [productoId],
+      orderBy: 'fecha DESC',
+    );
+  }
+
+  /// Corta el enlace de los gastos con un producto sin borrarlos: ese dinero
+  /// salió de verdad y debe seguir contando en las finanzas aunque el
+  /// producto ya no esté. Al quedar sueltos vuelven a ser gastos manuales.
+  Future<int> desvincularGastosDeProducto(int productoId) async {
+    final db = await database;
+    return await db.update(
+      'gastos',
+      {'producto_id': null},
+      where: 'producto_id = ?',
+      whereArgs: [productoId],
+    );
+  }
+
   // PRODUCTOS
   Future<int> insertProducto(Map<String, dynamic> producto) async {
     final db = await database;
@@ -424,6 +541,12 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getAllProductos() async {
     final db = await database;
     return await db.query('productos', orderBy: 'nombre');
+  }
+
+  Future<Map<String, dynamic>?> getProductoById(int id) async {
+    final db = await database;
+    final result = await db.query('productos', where: 'id = ?', whereArgs: [id]);
+    return result.isNotEmpty ? result.first : null;
   }
 
   Future<int> updateProducto(Map<String, dynamic> producto) async {
@@ -439,6 +562,113 @@ class DatabaseHelper {
   Future<int> deleteProducto(int id) async {
     final db = await database;
     return await db.delete('productos', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // MOVIMIENTOS DE INVENTARIO
+
+  /// Guarda una entrada, salida o ajuste de inventario en una sola
+  /// transacción: el producto (nuevo o actualizado), el gasto que pagó la
+  /// compra —si lo hubo— y el movimiento que deja el rastro. Así nunca queda
+  /// un gasto sin su movimiento, ni un movimiento sin su gasto.
+  ///
+  /// Devuelve el id del producto afectado.
+  Future<int> guardarMovimientoInventario({
+    required Map<String, dynamic> producto,
+    required Map<String, dynamic> movimiento,
+    Map<String, dynamic>? gasto,
+  }) async {
+    final db = await database;
+    return await db.transaction((txn) async {
+      final idExistente = producto['id'] as int?;
+      final productoId = idExistente ?? await txn.insert('productos', producto);
+      if (idExistente != null) {
+        await txn.update(
+          'productos',
+          producto,
+          where: 'id = ?',
+          whereArgs: [idExistente],
+        );
+      }
+
+      int? gastoId;
+      if (gasto != null) {
+        gastoId = await txn.insert('gastos', {
+          ...gasto,
+          'producto_id': productoId,
+        });
+      }
+
+      await txn.insert('movimientos_inventario', {
+        ...movimiento,
+        'producto_id': productoId,
+        'gasto_id': gastoId,
+      });
+
+      return productoId;
+    });
+  }
+
+  /// Deshace un movimiento en una sola transacción: deja el producto como
+  /// estaba, borra el gasto que lo acompañaba —si lo hubo— y elimina el
+  /// rastro.
+  Future<void> deshacerMovimientoInventario({
+    required Map<String, dynamic> producto,
+    required int movimientoId,
+    int? gastoId,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.update(
+        'productos',
+        producto,
+        where: 'id = ?',
+        whereArgs: [producto['id']],
+      );
+      if (gastoId != null) {
+        await txn.delete('gastos', where: 'id = ?', whereArgs: [gastoId]);
+      }
+      await txn.delete(
+        'movimientos_inventario',
+        where: 'id = ?',
+        whereArgs: [movimientoId],
+      );
+    });
+  }
+
+  Future<Map<String, dynamic>?> getMovimientoById(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'movimientos_inventario',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllMovimientos() async {
+    final db = await database;
+    return await db.query('movimientos_inventario', orderBy: 'fecha DESC');
+  }
+
+  Future<List<Map<String, dynamic>>> getMovimientosByProducto(
+    int productoId,
+  ) async {
+    final db = await database;
+    return await db.query(
+      'movimientos_inventario',
+      where: 'producto_id = ?',
+      whereArgs: [productoId],
+      orderBy: 'fecha DESC, id DESC',
+    );
+  }
+
+  Future<int> deleteMovimientosByProducto(int productoId) async {
+    final db = await database;
+    return await db.delete(
+      'movimientos_inventario',
+      where: 'producto_id = ?',
+      whereArgs: [productoId],
+    );
   }
 
   // POSTS REDES

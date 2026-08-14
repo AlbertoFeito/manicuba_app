@@ -50,8 +50,14 @@ class _Movimiento {
   final Ingreso? ingreso;
   final Gasto? gasto;
 
-  // true si es un ingreso generado por una cita completada (no editable aquí).
-  bool get automatico => ingreso?.citaId != null;
+  /// true si lo generó la app sola —un ingreso de cita completada o un gasto
+  /// de compra de inventario— y por tanto no se toca desde aquí: hay que
+  /// corregirlo donde se originó, o los dos módulos dejarían de cuadrar.
+  bool get automatico => ingreso?.citaId != null || gasto?.productoId != null;
+
+  /// true si el gasto lo creó una compra registrada en Inventario.
+  bool get esCompraInventario => gasto?.productoId != null;
+
   int? get id => ingreso?.id ?? gasto?.id;
 }
 
@@ -118,6 +124,10 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
   List<Cita> _citasCompletadas = const [];
 
   _Periodo _periodo = _Periodo.mes;
+
+  /// Día fijado en la gráfica de tendencia (índice dentro de la serie).
+  /// Se queda marcado hasta que se toque otro punto o el mismo otra vez.
+  int? _diaFijado;
   _Vista _vista = _Vista.resumen;
 
   static const List<Color> _paleta = [
@@ -348,14 +358,25 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
 
   Future<void> _accionMovimiento(_Movimiento m) async {
     if (m.automatico) {
-      // Los ingresos de citas se gestionan desde el Historial, no aquí.
+      // Los movimientos automáticos se corrigen donde se originaron: los
+      // ingresos en el Historial de citas, los gastos en Inventario.
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Ingreso de una cita'),
-          content: const Text(
-            'Este ingreso se generó al completar una cita. Para quitarlo, ve '
-            'al Historial de citas (menú ⋮) y usa "Deshacer" en esa cita.',
+          title: Text(
+            m.esCompraInventario
+                ? 'Gasto de una compra'
+                : 'Ingreso de una cita',
+          ),
+          content: Text(
+            m.esCompraInventario
+                ? 'Este gasto se generó al registrar una compra en '
+                    'Inventario. Para quitarlo, ve a Inventario, abre el '
+                    'producto y usa "Deshacer" en esa compra: se borra el '
+                    'gasto y el stock vuelve a como estaba.'
+                : 'Este ingreso se generó al completar una cita. Para '
+                    'quitarlo, ve al Historial de citas (menú ⋮) y usa '
+                    '"Deshacer" en esa cita.',
           ),
           actions: [
             FilledButton(
@@ -549,7 +570,12 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
             child: ChoiceChip(
               label: Text(p.label),
               selected: _periodo == p,
-              onSelected: (_) => setState(() => _periodo = p),
+              onSelected: (_) => setState(() {
+                _periodo = p;
+                // Otro periodo es otra serie: el índice fijado ya no señala
+                // al mismo día.
+                _diaFijado = null;
+              }),
             ),
           ),
       ],
@@ -1029,6 +1055,22 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
     }
     final intervaloEtiqueta = (dias / 5).ceil().clamp(1, dias).toDouble();
 
+    // Al cambiar de periodo la serie cambia de tamaño; si el índice fijado
+    // quedó fuera, se ignora en vez de reventar.
+    final fijado =
+        (_diaFijado != null && _diaFijado! < serie.length) ? _diaFijado : null;
+
+    final lineaIngresos = _lineaSerie(
+      serie.map((p) => p.ingresos).toList(),
+      AppTheme.successColor,
+      fijado,
+    );
+    final lineaGastos = _lineaSerie(
+      serie.map((p) => p.gastos).toList(),
+      AppTheme.errorColor,
+      fijado,
+    );
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 16, 16, 12),
@@ -1084,16 +1126,50 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
                       ),
                     ),
                   ),
-                  lineBarsData: [
-                    _lineaSerie(
-                      serie.map((p) => p.ingresos).toList(),
-                      AppTheme.successColor,
-                    ),
-                    _lineaSerie(
-                      serie.map((p) => p.gastos).toList(),
-                      AppTheme.errorColor,
-                    ),
-                  ],
+                  lineTouchData: LineTouchData(
+                    // Sin gestión automática: así el punto no se borra al
+                    // levantar el dedo, se queda fijado.
+                    handleBuiltInTouches: false,
+                    // Por defecto solo detecta el toque a menos de 10 px del
+                    // punto; con pocos días quedan muy separados y la mayoría
+                    // de los toques no hacían nada. Sin límite, un toque en
+                    // cualquier parte de la gráfica fija el día más cercano.
+                    touchSpotThreshold: double.infinity,
+                    touchCallback: (evento, respuesta) {
+                      if (evento is! FlTapUpEvent) {
+                        return;
+                      }
+                      final tocados = respuesta?.lineBarSpots;
+                      if (tocados == null || tocados.isEmpty) {
+                        return;
+                      }
+                      final indice = tocados.first.spotIndex;
+                      setState(() {
+                        // Tocar el mismo punto otra vez lo suelta.
+                        _diaFijado = _diaFijado == indice ? null : indice;
+                      });
+                    },
+                    getTouchedSpotIndicator: (barra, indices) {
+                      final color = barra.color ?? AppTheme.primaryColor;
+                      return indices
+                          .map(
+                            (_) => TouchedSpotIndicatorData(
+                              FlLine(color: color, strokeWidth: 2),
+                              FlDotData(
+                                getDotPainter: (spot, porcentaje, datos, i) =>
+                                    FlDotCirclePainter(
+                                  radius: 5,
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                  strokeColor: color,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList();
+                    },
+                  ),
+                  lineBarsData: [lineaIngresos, lineaGastos],
                 ),
               ),
             ),
@@ -1106,13 +1182,19 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
                 _dotLeyenda('Gastos', AppTheme.errorColor),
               ],
             ),
+            const SizedBox(height: 10),
+            _detalleDiaFijado(fijado, serie),
           ],
         ),
       ),
     );
   }
 
-  LineChartBarData _lineaSerie(List<double> valores, Color color) {
+  LineChartBarData _lineaSerie(
+    List<double> valores,
+    Color color,
+    int? fijado,
+  ) {
     return LineChartBarData(
       spots: [
         for (var i = 0; i < valores.length; i++)
@@ -1123,6 +1205,87 @@ class _FinanzasScreenState extends State<FinanzasScreen> {
       barWidth: 2.5,
       dotData: const FlDotData(show: false),
       belowBarData: BarAreaData(show: true, color: color.withOpacity(0.08)),
+      // Marca el día fijado en las dos series a la vez, para poder comparar
+      // ingresos y gastos del mismo día.
+      showingIndicators: fijado == null ? const [] : [fijado],
+    );
+  }
+
+  /// Cifras del día fijado en la tendencia. Se muestran bajo la gráfica en
+  /// vez de en un globo flotante: en una pantalla de móvil el globo se queda
+  /// sin sitio y tapa los propios puntos.
+  Widget _detalleDiaFijado(int? fijado, List<_PuntoDia> serie) {
+    if (fijado == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          'Toca un punto para fijarlo y ver las cifras de ese día.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      );
+    }
+
+    final punto = serie[fijado];
+    final balance = punto.ingresos - punto.gastos;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 10),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  DateFormat('EEEE d MMM', 'es_ES').format(punto.fecha),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Soltar',
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => setState(() => _diaFijado = null),
+              ),
+            ],
+          ),
+          Wrap(
+            spacing: 14,
+            runSpacing: 4,
+            children: [
+              _cifraDia('Ingresos', punto.ingresos, AppTheme.successColor),
+              _cifraDia('Gastos', punto.gastos, AppTheme.errorColor),
+              _cifraDia(
+                'Balance',
+                balance,
+                balance >= 0 ? AppTheme.successColor : AppTheme.errorColor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cifraDia(String etiqueta, double monto, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('$etiqueta ', style: const TextStyle(fontSize: 12)),
+        Text(
+          _formatoMoneda.format(monto),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 

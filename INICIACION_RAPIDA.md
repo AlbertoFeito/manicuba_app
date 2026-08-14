@@ -209,28 +209,52 @@ await service.estadisticas();
 import 'services/inventario_service.dart';
 
 final service = InventarioService();
+
+// Alta. Con registrarGasto: false para stock que ya se tenía.
 await service.crearProducto(producto);
-await service.aumentarStock(id, cantidad);
+
+// Una compra sube el stock, promedia el costo y crea el gasto en Finanzas.
+await service.registrarCompra(
+  productoId: id,
+  cantidad: 10,
+  totalPagado: 500,
+);
+
+// Una salida solo descuenta: el dinero salió al comprar, no ahora.
+await service.registrarSalida(productoId: id, cantidad: 2);
+
+await service.registrarCorreccion(productoId: id, nuevoStock: 7);
+await service.movimientosDe(id);
 await service.obtenerBajoStock();
 ```
+
+> **Modelo de costo:** el gasto ocurre cuando compras, por el total pagado.
+> Consumir producto después no genera gasto. Solo `registrarCompra` (y el
+> stock inicial de `crearProducto`) tocan Finanzas.
 
 ---
 
 ## 📊 Base de Datos
 
-La base de datos está totalmente configurada con **9 tablas**:
+La base de datos está totalmente configurada con **10 tablas**:
 
 - `clientes` - Información de clientes
 - `servicios` - Servicios ofrecidos
 - `citas` - Registro de citas
 - `ingresos` - Dinero recibido
-- `gastos` - Dinero gastado
+- `gastos` - Dinero gastado (`producto_id` marca los de compras de inventario)
 - `productos` - Inventario
+- `movimientos_inventario` - Entradas y salidas de stock
 - `posts_redes` - Posts para redes
 - `fotos_trabajo` - Galería
 - `estadisticas_redes` - Métricas
 
 Se crean automáticamente la primera vez que ejecutes la app.
+
+Las instalaciones anteriores se actualizan solas: `DatabaseHelper.runMigrations`
+aplica las migraciones en cadena al abrir la base. Al añadir o cambiar
+columnas hay que subir `dbVersion` **y** escribir la migración correspondiente,
+o los teléfonos que ya tienen la app se quedan con el esquema viejo.
 
 ---
 

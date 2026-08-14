@@ -62,6 +62,16 @@ class FinanzasService {
     return mapList.map((map) => Gasto.fromMap(map)).toList();
   }
 
+  /// Gastos generados automáticamente por las compras de un producto.
+  Future<List<Gasto>> obtenerGastosPorProducto(int productoId) async {
+    final mapList = await _db.getGastosByProducto(productoId);
+    return mapList.map((map) => Gasto.fromMap(map)).toList();
+  }
+
+  Future<int> desvincularGastosDeProducto(int productoId) async {
+    return _db.desvincularGastosDeProducto(productoId);
+  }
+
   // ===== ANÁLISIS =====
 
   // Ingreso total hoy

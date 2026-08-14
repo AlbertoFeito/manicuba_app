@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../config/constants.dart';
 import '../../models/producto.dart';
@@ -6,6 +7,12 @@ import '../../services/categoria_service.dart';
 import '../../services/inventario_service.dart';
 
 /// Formulario para crear o editar un producto del inventario.
+///
+/// Al crear, el stock inicial cuenta como una entrada y puede generar el
+/// gasto en Finanzas. Al editar, el stock y el costo son de solo lectura:
+/// se mueven con "Registrar compra", "Descontar" y "Corregir stock", que
+/// dejan rastro en el historial. Cambiarlos aquí a mano descuadraría las
+/// finanzas con el inventario.
 class ProductoFormScreen extends StatefulWidget {
   const ProductoFormScreen({super.key, this.producto});
 
@@ -19,6 +26,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _inventarioService = InventarioService();
   final _categoriaService = CategoriaService();
+  final _formatoMoneda = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
 
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _stockCtrl;
@@ -30,6 +38,10 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
   late String _categoria;
   List<String> _categorias = AppConstants.categoriasProductos;
   bool _guardando = false;
+
+  /// Si el stock inicial es una compra que se paga ahora (crea el gasto) o
+  /// producto que la usuaria ya tenía antes de usar la app (no lo crea).
+  bool _registrarGasto = true;
 
   bool get _esEdicion => widget.producto != null;
 
@@ -78,46 +90,92 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     super.dispose();
   }
 
+  int get _stockInicial => int.tryParse(_stockCtrl.text.trim()) ?? 0;
+
+  double get _costo =>
+      double.tryParse(_costoCtrl.text.trim().replaceAll(',', '.')) ?? 0;
+
+  double get _totalInicial => _stockInicial * _costo;
+
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
     setState(() => _guardando = true);
 
-    var categoriaFinal = _categoria;
+    final categoriaFinal = _categoria == 'Otros'
+        ? _nuevaCategoriaCtrl.text.trim()
+        : _categoria;
+
+    // Un mismo producto repetido parte el stock en dos fichas y ninguna
+    // refleja lo que hay de verdad. Se comprueba antes de guardar la
+    // categoría nueva, para no dejarla registrada si el alta se rechaza.
+    final duplicado = await _inventarioService.buscarPorNombreYCategoria(
+      _nombreCtrl.text,
+      categoriaFinal,
+      exceptoId: widget.producto?.id,
+    );
+    if (duplicado != null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _guardando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 6),
+          content: Text(
+            'Ya tienes "${duplicado.nombre}" en ${duplicado.categoria}. '
+            'Para sumarle stock usa el botón + en ese producto.',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (_categoria == 'Otros') {
-      categoriaFinal = _nuevaCategoriaCtrl.text.trim();
       await _categoriaService.agregarCategoria(categoriaFinal);
     }
 
+    final anterior = widget.producto;
     final producto = Producto(
-      id: widget.producto?.id,
+      id: anterior?.id,
       nombre: _nombreCtrl.text.trim(),
       categoria: categoriaFinal,
-      cantidadStock: int.parse(_stockCtrl.text.trim()),
+      // Al editar, stock y costo se conservan tal cual: solo cambian a través
+      // de los movimientos, que dejan rastro.
+      cantidadStock: anterior?.cantidadStock ?? _stockInicial,
       cantidadMinima: int.parse(_minimoCtrl.text.trim()),
-      costoUnitario: double.parse(_costoCtrl.text.replaceAll(',', '.')),
+      costoUnitario: anterior?.costoUnitario ?? _costo,
       proveedor:
           _proveedorCtrl.text.trim().isEmpty ? null : _proveedorCtrl.text.trim(),
-      fechaCompra: widget.producto?.fechaCompra,
-      fechaCreacion: widget.producto?.fechaCreacion,
+      fechaCompra: anterior?.fechaCompra,
+      fechaCreacion: anterior?.fechaCreacion,
     );
 
     try {
       if (_esEdicion) {
         await _inventarioService.actualizar(producto);
       } else {
-        await _inventarioService.crearProducto(producto);
+        await _inventarioService.crearProducto(
+          producto,
+          registrarGasto: _registrarGasto,
+        );
       }
       if (!mounted) {
         return;
       }
+      final creoGasto =
+          !_esEdicion && _registrarGasto && _totalInicial > 0;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             _esEdicion
                 ? AppConstants.msgSucessoActualizar
-                : AppConstants.msgSucessoGuardar,
+                : creoGasto
+                    ? 'Producto creado. Gasto de '
+                        '${_formatoMoneda.format(_totalInicial)} registrado en '
+                        'Finanzas'
+                    : AppConstants.msgSucessoGuardar,
           ),
         ),
       );
@@ -225,12 +283,14 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _stockCtrl,
+                    readOnly: _esEdicion,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Stock *',
-                      prefixIcon: Icon(Icons.numbers),
+                    decoration: InputDecoration(
+                      labelText: _esEdicion ? 'Stock actual' : 'Stock inicial *',
+                      prefixIcon: const Icon(Icons.numbers),
                     ),
-                    validator: _validarEntero,
+                    onChanged: (_) => setState(() {}),
+                    validator: _esEdicion ? null : _validarEntero,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -250,6 +310,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _costoCtrl,
+              readOnly: _esEdicion,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -257,8 +318,36 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                 labelText: 'Costo unitario *',
                 prefixIcon: Icon(Icons.attach_money),
               ),
-              validator: _validarCosto,
+              onChanged: (_) => setState(() {}),
+              validator: _esEdicion ? null : _validarCosto,
             ),
+            if (_esEdicion) ...[
+              const SizedBox(height: 8),
+              Text(
+                'El stock y el costo se cambian desde el inventario, con '
+                '"Registrar compra", "Descontar" o "Corregir stock". Así queda '
+                'el rastro y las finanzas cuadran.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            if (!_esEdicion && _totalInicial > 0) ...[
+              const SizedBox(height: 8),
+              Card(
+                margin: EdgeInsets.zero,
+                child: SwitchListTile(
+                  value: _registrarGasto,
+                  onChanged: (value) => setState(() => _registrarGasto = value),
+                  title: const Text('Registrar el gasto en Finanzas'),
+                  subtitle: Text(
+                    _registrarGasto
+                        ? 'Se creará un gasto de '
+                            '${_formatoMoneda.format(_totalInicial)} por esta '
+                            'compra'
+                        : 'No se creará gasto: es producto que ya tenías',
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             TextFormField(
               controller: _proveedorCtrl,

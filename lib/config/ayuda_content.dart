@@ -70,10 +70,11 @@ class Ayudas {
     puntos: [
       'Arriba ves el balance del mes y los mini-balances de hoy y de la semana.',
       'Usa "Ingreso" o "Gasto" para registrar movimientos manualmente.',
-      'Los ingresos de las citas completadas aparecen aquí automáticamente (marcados como "automático" con un candado).',
-      'Toca un movimiento para Editarlo o Eliminarlo si lo registraste por error. Los ingresos automáticos de citas no se editan aquí: usa "Deshacer" en el Historial.',
+      'Los ingresos de las citas completadas y los gastos de las compras de Inventario aparecen aquí automáticamente (marcados como "automático" con un candado).',
+      'Toca un movimiento para Editarlo o Eliminarlo si lo registraste por error. Los automáticos no se editan aquí: los ingresos de citas se quitan con "Deshacer" en el Historial, y los gastos de compras con "Deshacer" en el historial del producto.',
       'Usa los filtros Hoy / Semana / Mes / Todo para acotar los movimientos y el gráfico de gastos.',
       'El gráfico circular reparte tus gastos por categoría del periodo elegido.',
+      'En la gráfica de tendencia (vista Analíticas) toca cualquier punto: se queda marcado y debajo ves los ingresos, gastos y balance de ese día. Tócalo otra vez o pulsa la X para soltarlo.',
       'Desliza hacia abajo para actualizar los datos.',
     ],
   );
@@ -106,11 +107,16 @@ class Ayudas {
     titulo: 'Inventario',
     icono: Icons.inventory_2,
     puntos: [
-      'Controla tus productos: stock actual, mínimo y costo.',
-      'Usa los botones + y − para ajustar el stock rápidamente.',
-      'Busca por nombre o categoría con la barra superior.',
+      'El gasto se registra cuando COMPRAS, por lo que pagaste. Descontar stock después no vuelve a gastar: ese dinero ya salió.',
+      'Usa + para registrar una compra: te pregunta cuántas unidades entraron y cuánto pagaste, y crea el gasto solo en Finanzas. No hace falta apuntarlo dos veces.',
+      'Usa − para descontar lo que vas gastando (o lo que se rompe o vence). Esto no toca tus finanzas, solo el stock.',
+      'Si compras el mismo producto más caro, el costo unitario se promedia con lo que ya tenías, en vez de reescribir el valor del stock viejo.',
+      'Toca un producto para ver su historial: cuánto compraste y cuánto usaste. Desde ahí puedes "Deshacer" una compra o salida que registraste mal.',
+      'Al crear un producto que YA tenías, apaga "Registrar el gasto en Finanzas": ese dinero salió antes y no debe contar como gasto de hoy.',
+      '"Corregir stock" (menú ⋮) sirve para cuadrar con lo que hay de verdad después de contar, y para arreglar el costo unitario si lo tecleaste mal. No cambia tus finanzas.',
+      'No puedes tener dos productos con el mismo nombre en la misma categoría: se partiría el stock en dos y ninguno diría la verdad. Si ya lo tienes, súmale stock con + en vez de crearlo otra vez.',
       'Los productos por debajo del mínimo se marcan como "Bajo"; toca la tarjeta "Bajo stock" para ver solo esos.',
-      'Arriba ves el valor total del inventario.',
+      'Arriba ves el valor total del inventario y lo que llevas comprado en los últimos 30 días.',
     ],
   );
 

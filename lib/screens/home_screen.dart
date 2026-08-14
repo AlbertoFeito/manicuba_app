@@ -495,6 +495,14 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => const InventarioScreen(),
       ),
     );
+    if (!mounted) {
+      return;
+    }
+    // Registrar una compra en Inventario crea un gasto, así que al volver hay
+    // que refrescar el resumen de hoy y forzar la recarga de Finanzas; si no,
+    // el gasto ya está en la base pero la pantalla sigue mostrando lo viejo.
+    setState(() => _finanzasReload++);
+    await _cargarResumen();
   }
 
   Future<void> _abrirGaleria() async {

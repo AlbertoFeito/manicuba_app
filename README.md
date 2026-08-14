@@ -94,6 +94,7 @@ manicuba-app/
 - **ingresos** - Dinero recibido
 - **gastos** - Dinero gastado
 - **productos** - Inventario
+- **movimientos_inventario** - Entradas y salidas de stock
 - **posts_redes** - Posts para redes sociales
 - **fotos_trabajo** - Galería de trabajos
 - **estadisticas_redes** - Métricas sociales
@@ -123,8 +124,9 @@ manicuba-app/
 - Listado de productos
 - Control de stock
 - Alertas de bajo stock
-- Historial de compras
-- Costo por producto
+- Registrar compras: crea el gasto en Finanzas automáticamente
+- Historial de entradas y salidas por producto
+- Costo unitario con promedio ponderado entre compras
 
 ### 📸 Redes Sociales
 - Crear posts con emojis y hashtags
