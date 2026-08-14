@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../services/licencia_service.dart';
 import 'licencia_screen.dart';
 
-/// Envuelve la app: arranca la prueba en el primer uso y, cuando vence, pone
-/// la pantalla de activación por delante de todo hasta que se active.
+/// Envuelve la app: arranca la prueba en el primer uso. Después de 15 días
+/// bloquea la app y muestra solo la pantalla de licencia hasta que se active.
 class LicenciaGate extends StatefulWidget {
   const LicenciaGate({super.key, required this.child});
 
