@@ -22,16 +22,23 @@
         background: #6a1b9a; color: #fff; border: 0; border-radius: 10px;
         cursor: pointer; font-weight: 600;
       }
+      button.sec {
+        background: #fff; color: #6a1b9a; border: 1px solid #6a1b9a;
+      }
+      button.ok { background: #2e7d32; }
       .out {
         margin-top: 20px; padding: 16px; border-radius: 10px;
         background: rgba(106,27,154,.08); border: 1px solid #6a1b9a;
         display: none;
       }
       .out.show { display: block; }
+      .app { font-weight: 700; color: #6a1b9a; margin-bottom: 8px; }
       .code {
         font-size: 1.6rem; font-weight: 700; letter-spacing: 2px;
         word-break: break-all; margin: 6px 0 12px;
       }
+      .row { display: flex; gap: 10px; }
+      .row button { margin-top: 0; }
       .muted { color: #888; font-size: .9rem; }
       .warn { color: #c62828; font-size: .9rem; margin-top: 8px; }
     </style>
@@ -47,19 +54,28 @@
     <label for="secret">Secreto</label>
     <input id="secret" type="text" placeholder="tu-secreto-de-produccion" />
 
+    <label for="cliente">Nombre de la clienta (opcional)</label>
+    <input id="cliente" type="text" placeholder="Ej. María Pérez" />
+
     <label for="device">Código de equipo</label>
     <input id="device" type="text" placeholder="7K3M9-2QXBD" />
 
     <button id="gen">Generar licencia</button>
 
     <div class="out" id="out">
-      <div class="muted">Licencia para <span id="eq"></span>:</div>
+      <div class="app" id="appline"></div>
+      <div class="muted" id="clienteline"></div>
+      <div class="muted">Equipo <span id="eq"></span> · Licencia:</div>
       <div class="code" id="lic"></div>
-      <button id="copy" style="margin-top:0">Copiar licencia</button>
+      <div class="row">
+        <button id="copyLic" class="sec">Copiar licencia</button>
+        <button id="copyMsg">Copiar mensaje</button>
+      </div>
       <div class="warn" id="warn"></div>
     </div>
 
     <script>
+      const APP_NAME = 'PeluCuba';
       const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
       const LICENCE_CHARS = 16;
 
@@ -96,23 +112,85 @@
         return toBase32(new Uint8Array(sig), LICENCE_CHARS);
       }
 
+      // Copia robusta: usa el portapapeles moderno si está disponible (contexto
+      // seguro) y, si no —típico al abrir el HTML como archivo local—, cae a un
+      // textarea temporal con execCommand para que el botón funcione igual.
+      async function copiarTexto(texto) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(texto);
+            return true;
+          }
+        } catch (e) { /* seguimos con el respaldo */ }
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = texto;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.top = '-1000px';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) {
+          return false;
+        }
+      }
+      async function copiarConAviso(texto, btn) {
+        const original = btn.textContent;
+        const ok = await copiarTexto(texto);
+        btn.textContent = ok ? '✓ Copiado' : 'Selecciónalo y cópialo a mano';
+        btn.classList.toggle('ok', ok);
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('ok');
+        }, 1800);
+      }
+
       const $ = (id) => document.getElementById(id);
+
+      // Estado del último resultado, para los botones de copiar.
+      let ultimaLic = '';
+      let ultimoMensaje = '';
+
       $('gen').addEventListener('click', async () => {
         const secret = $('secret').value.trim();
         const device = normalizeCode($('device').value);
+        const cliente = $('cliente').value.trim();
         if (!secret || !device) {
           alert('Escribe el secreto y el código de equipo.');
           return;
         }
         const lic = await computeLicence(device, secret);
-        $('eq').textContent = group(device, 5);
-        $('lic').textContent = group(lic, 4);
+        const eq = group(device, 5);
+        const licFmt = group(lic, 4);
+
+        ultimaLic = licFmt;
+        ultimoMensaje =
+          `${APP_NAME} 💇 — Licencia\n` +
+          (cliente ? `Cliente: ${cliente}\n` : '') +
+          `Equipo: ${eq}\n` +
+          `Licencia: ${licFmt}`;
+
+        $('appline').textContent = `${APP_NAME} 💇 — Licencia`;
+        $('clienteline').textContent = cliente ? `Cliente: ${cliente}` : '';
+        $('clienteline').style.display = cliente ? 'block' : 'none';
+        $('eq').textContent = eq;
+        $('lic').textContent = licFmt;
         $('warn').textContent = secret === 'pelucuba-dev-secret'
           ? 'AVISO: es el secreto de desarrollo, no sirve para vender.' : '';
         $('out').classList.add('show');
       });
-      $('copy').addEventListener('click', () => {
-        navigator.clipboard.writeText($('lic').textContent);
+
+      $('copyLic').addEventListener('click', (e) => {
+        if (ultimaLic) copiarConAviso(ultimaLic, e.currentTarget);
+      });
+      $('copyMsg').addEventListener('click', (e) => {
+        if (ultimoMensaje) copiarConAviso(ultimoMensaje, e.currentTarget);
       });
     </script>
   </body>
