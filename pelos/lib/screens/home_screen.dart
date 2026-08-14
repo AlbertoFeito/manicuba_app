@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../config/theme.dart';
 import 'agenda/agenda_screen.dart';
 import 'agenda/cita_form_screen.dart';
@@ -28,6 +29,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  // Marca del último toque de "atrás" estando en Inicio, para el doble toque
+  // que cierra la app.
+  DateTime? _ultimoAtras;
 
   final _citaService = CitaService();
   final _finanzasService = FinanzasService();
@@ -97,133 +102,165 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // Botón "atrás" del teléfono: desde cualquier pestaña vuelve a Inicio; ya en
+  // Inicio, pide un segundo toque en 2 s para cerrar la app.
+  void _manejarAtras() {
+    if (_selectedIndex != 0) {
+      setState(() => _selectedIndex = 0);
+      _cargarResumen();
+      return;
+    }
+    final ahora = DateTime.now();
+    if (_ultimoAtras == null ||
+        ahora.difference(_ultimoAtras!) > const Duration(seconds: 2)) {
+      _ultimoAtras = ahora;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pulsa atrás de nuevo para salir'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _titles[_selectedIndex],
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        _manejarAtras();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            _titles[_selectedIndex],
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          elevation: 2,
+          actions: [
+            AyudaButton(info: _ayudaActual),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Más',
+              onSelected: (value) {
+                if (value == 'servicios') {
+                  _abrirServicios();
+                } else if (value == 'inventario') {
+                  _abrirInventario();
+                } else if (value == 'galeria') {
+                  _abrirGaleria();
+                } else if (value == 'historial') {
+                  _abrirHistorial();
+                } else if (value == 'licencia') {
+                  _abrirLicencia();
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'historial',
+                  child: ListTile(
+                    leading: Icon(Icons.history),
+                    title: Text('Historial de citas'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'servicios',
+                  child: ListTile(
+                    leading: Icon(Icons.content_cut),
+                    title: Text('Servicios'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'inventario',
+                  child: ListTile(
+                    leading: Icon(Icons.inventory_2),
+                    title: Text('Inventario'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'galeria',
+                  child: ListTile(
+                    leading: Icon(Icons.photo_library),
+                    title: Text('Galería de trabajos'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'licencia',
+                  child: ListTile(
+                    leading: Icon(Icons.workspace_premium),
+                    title: Text('Licencia'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        elevation: 2,
-        actions: [
-          AyudaButton(info: _ayudaActual),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: 'Más',
-            onSelected: (value) {
-              if (value == 'servicios') {
-                _abrirServicios();
-              } else if (value == 'inventario') {
-                _abrirInventario();
-              } else if (value == 'galeria') {
-                _abrirGaleria();
-              } else if (value == 'historial') {
-                _abrirHistorial();
-              } else if (value == 'licencia') {
-                _abrirLicencia();
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            // Pantalla de inicio
+            _buildHomeTab(),
+            // Agenda
+            AgendaScreen(key: ValueKey(_agendaReload)),
+            // Clientes
+            ClientesScreen(key: ValueKey(_clientesReload)),
+            // Finanzas
+            FinanzasScreen(key: ValueKey(_finanzasReload)),
+            // Redes Sociales
+            RedesScreen(key: ValueKey(_redesReload)),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home),
+              label: _titles[0],
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.calendar_today),
+              label: _titles[1],
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.people),
+              label: _titles[2],
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.bar_chart),
+              label: _titles[3],
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.share),
+              label: _titles[4],
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+              // Recarga automáticamente Finanzas al abrir su pestaña, para que
+              // refleje al instante los ingresos de citas recién completadas.
+              if (index == 3) {
+                _finanzasReload++;
               }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: 'historial',
-                child: ListTile(
-                  leading: Icon(Icons.history),
-                  title: Text('Historial de citas'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'servicios',
-                child: ListTile(
-                  leading: Icon(Icons.content_cut),
-                  title: Text('Servicios'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'inventario',
-                child: ListTile(
-                  leading: Icon(Icons.inventory_2),
-                  title: Text('Inventario'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'galeria',
-                child: ListTile(
-                  leading: Icon(Icons.photo_library),
-                  title: Text('Galería de trabajos'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'licencia',
-                child: ListTile(
-                  leading: Icon(Icons.workspace_premium),
-                  title: Text('Licencia'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          // Pantalla de inicio
-          _buildHomeTab(),
-          // Agenda
-          AgendaScreen(key: ValueKey(_agendaReload)),
-          // Clientes
-          ClientesScreen(key: ValueKey(_clientesReload)),
-          // Finanzas
-          FinanzasScreen(key: ValueKey(_finanzasReload)),
-          // Redes Sociales
-          RedesScreen(key: ValueKey(_redesReload)),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: _titles[0],
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.calendar_today),
-            label: _titles[1],
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.people),
-            label: _titles[2],
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.bar_chart),
-            label: _titles[3],
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.share),
-            label: _titles[4],
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-            // Recarga automáticamente Finanzas al abrir su pestaña, para que
-            // refleje al instante los ingresos de citas recién completadas.
-            if (index == 3) {
-              _finanzasReload++;
+            });
+            if (index == 0) {
+              _cargarResumen();
             }
-          });
-          if (index == 0) {
-            _cargarResumen();
-          }
-        },
+          },
+        ),
       ),
     );
   }
