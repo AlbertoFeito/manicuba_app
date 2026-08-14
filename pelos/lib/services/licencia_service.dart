@@ -21,9 +21,9 @@ class LicenciaService {
   static const int _deviceChars = 10;
   static const int _licenceChars = 16;
 
-  static const String _kDeviceId = 'pelucuba_lic_device_id';
-  static const String _kTrialStart = 'pelucuba_lic_trial_started_at';
-  static const String _kLicenseKey = 'pelucuba_lic_license_key';
+  static const String _kDeviceId = 'lic_device_id';
+  static const String _kTrialStart = 'lic_trial_started_at';
+  static const String _kLicenseKey = 'lic_license_key';
 
   /// Secreto de firma, inyectado al compilar con
   /// `--dart-define=LICENSE_SECRET=...`. El valor por defecto solo permite
@@ -89,7 +89,7 @@ class LicenciaService {
   static String computeLicence(String deviceId, String secret) {
     final hmac = Hmac(sha256, utf8.encode(secret));
     final digest = hmac.convert(
-      utf8.encode('pelucuba:v1:${normalizeCode(deviceId)}'),
+      utf8.encode('manicuba:v1:${normalizeCode(deviceId)}'),
     );
     return _toBase32(digest.bytes, _licenceChars);
   }

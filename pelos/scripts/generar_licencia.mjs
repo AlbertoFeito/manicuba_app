@@ -46,7 +46,7 @@ function group(code, size) {
 
 function computeLicence(deviceId, secret) {
   const digest = createHmac('sha256', secret)
-    .update(`pelucuba:v1:${normalizeCode(deviceId)}`)
+    .update(`manicuba:v1:${normalizeCode(deviceId)}`)
     .digest();
   return toBase32(digest, LICENCE_CHARS);
 }
