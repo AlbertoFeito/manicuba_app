@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'database_helper.dart';
+import '../database/database_helper.dart';
 
 /// Información de un archivo de backup.
 class BackupFile {
@@ -45,7 +45,7 @@ class BackupService {
 
   /// Exporta toda la base de datos a JSON.
   static Future<String> exportData() async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await DatabaseHelper().database;
 
     final data = {
       'exportDate': DateTime.now().toIso8601String(),
@@ -67,7 +67,7 @@ class BackupService {
   /// ⚠️ CUIDADO: Esto borra TODOS los datos actuales e importa los del JSON.
   static Future<void> importData(String jsonString) async {
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
-    final db = await DatabaseHelper.instance.database;
+    final db = await DatabaseHelper().database;
 
     await db.transaction((txn) async {
       // Borrar todas las tablas
