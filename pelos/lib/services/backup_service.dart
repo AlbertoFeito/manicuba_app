@@ -189,18 +189,25 @@ class BackupService {
     }
   }
 
-  /// Crea un backup automático si no se ha hecho uno en las últimas 24h.
+  /// Crea un backup automático solo si no existe uno del día actual.
   static Future<void> maybeAutoBackup() async {
     try {
-      // Leer última fecha de backup desde SharedPreferences
-      // (Implementar según tu sistema de preferencias)
-      // Por ahora, solo crear backup si es necesario
-
       if (!Platform.isAndroid && !Platform.isIOS) {
         return; // No auto-backup en web
       }
 
-      await createBackupFile();
+      final backupDir = await _getBackupDirectory();
+      final files = backupDir.listSync().whereType<File>().toList();
+
+      // Verificar si existe un backup de hoy
+      final today = DateTime.now();
+      final todayStr = '${today.year}-${_pad(today.month)}-${_pad(today.day)}';
+
+      final existsBackupToday = files.any((file) => file.path.contains(todayStr));
+
+      if (!existsBackupToday) {
+        await createBackupFile();
+      }
     } catch (e) {
       // No fallar si el backup automático falla
       print('Auto backup error: $e');
@@ -262,6 +269,54 @@ class BackupService {
     try {
       final json = await backup.file.readAsString();
       return jsonDecode(json) as Map<String, dynamic>;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Valida que un JSON sea un backup válido de ManiCuba/PeluCuba.
+  static bool isValidBackup(Map<String, dynamic> data) {
+    // Verificar que tenga los campos requeridos
+    final requiredFields = [
+      'exportDate',
+      'dbVersion',
+      'clientes',
+      'citas',
+      'productos',
+      'gastos',
+      'ingresos',
+      'posts_redes',
+      'fotos_trabajo',
+      'movimientos_inventario',
+    ];
+
+    for (final field in requiredFields) {
+      if (!data.containsKey(field)) {
+        return false;
+      }
+      // Verificar que sean listas
+      if (data[field] is! List) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Restaura desde un archivo JSON en cualquier ruta.
+  static Future<void> importDataFromFile(File file) async {
+    try {
+      final jsonString = await file.readAsString();
+      final data = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      if (!isValidBackup(data)) {
+        throw Exception(
+          'El archivo no es un backup válido de ManiCuba/PeluCuba. '
+          'Verifica que sea un archivo JSON generado por la app.',
+        );
+      }
+
+      await importData(jsonString);
     } catch (e) {
       rethrow;
     }

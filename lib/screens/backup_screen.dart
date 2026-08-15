@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import '../services/backup_service.dart';
 import '../config/theme.dart';
 
@@ -130,6 +132,61 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
+  Future<void> _loadAndRestoreBackup() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final filePath = result.files.first.path;
+      if (filePath == null) return;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('⚠️ Restaurar Backup'),
+          content: const Text(
+            '¿Estás seguro? Esto REEMPLAZARÁ todos tus datos actuales con los del archivo seleccionado.\n\n'
+            'No se puede deshacer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Restaurar'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      setState(() => _isLoading = true);
+      try {
+        await BackupService.importDataFromFile(File(filePath));
+        setState(() => _message = '✅ Datos restaurados exitosamente');
+        if (mounted) {
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) Navigator.of(context).pop();
+          });
+        }
+      } catch (e) {
+        setState(() => _message = '❌ Error al restaurar: $e');
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _message = '❌ Error al cargar archivo: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,18 +219,34 @@ class _BackupScreenState extends State<BackupScreen> {
                       style: TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _createBackup,
-                        icon: const Icon(Icons.save_alt),
-                        label: const Text('Crear Backup Ahora'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _createBackup,
+                            icon: const Icon(Icons.save_alt),
+                            label: const Text('Crear Backup'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _loadAndRestoreBackup,
+                            icon: const Icon(Icons.upload_file),
+                            label: const Text('Cargar Archivo'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
