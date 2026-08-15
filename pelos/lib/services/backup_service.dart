@@ -55,7 +55,8 @@ class BackupService {
       'productos': await db.query('productos'),
       'gastos': await db.query('gastos'),
       'ingresos': await db.query('ingresos'),
-      'posts': await db.query('posts'),
+      'posts_redes': await db.query('posts_redes'),
+      'fotos_trabajo': await db.query('fotos_trabajo'),
       'movimientos_inventario': await db.query('movimientos_inventario'),
     };
 
@@ -71,7 +72,8 @@ class BackupService {
 
     await db.transaction((txn) async {
       // Borrar todas las tablas
-      await txn.delete('posts');
+      await txn.delete('fotos_trabajo');
+      await txn.delete('posts_redes');
       await txn.delete('ingresos');
       await txn.delete('gastos');
       await txn.delete('movimientos_inventario');
@@ -110,9 +112,15 @@ class BackupService {
               conflictAlgorithm: ConflictAlgorithm.replace);
         }
       }
-      if (data['posts'] != null) {
-        for (final row in data['posts']) {
-          await txn.insert('posts', row as Map<String, dynamic>,
+      if (data['posts_redes'] != null) {
+        for (final row in data['posts_redes']) {
+          await txn.insert('posts_redes', row as Map<String, dynamic>,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+      if (data['fotos_trabajo'] != null) {
+        for (final row in data['fotos_trabajo']) {
+          await txn.insert('fotos_trabajo', row as Map<String, dynamic>,
               conflictAlgorithm: ConflictAlgorithm.replace);
         }
       }
