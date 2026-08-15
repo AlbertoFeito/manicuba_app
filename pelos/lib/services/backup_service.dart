@@ -302,6 +302,7 @@ class BackupService {
   }
 
   /// Restaura desde un archivo JSON en cualquier ruta.
+  /// Después de restaurar, copia el archivo a la carpeta de backups.
   static Future<void> importDataFromFile(File file) async {
     try {
       final jsonString = await file.readAsString();
@@ -315,6 +316,17 @@ class BackupService {
       }
 
       await importData(jsonString);
+
+      // Copiar archivo a la carpeta de backups para que aparezca en la lista
+      try {
+        final backupDir = await _getBackupDirectory();
+        final filename = file.path.split('/').last;
+        final destFile = File('${backupDir.path}/$filename');
+        await file.copy(destFile.path);
+      } catch (e) {
+        // Si falla la copia, no interrumpir - la restauración ya funcionó
+        print('Advertencia: No se pudo copiar backup a carpeta: $e');
+      }
     } catch (e) {
       rethrow;
     }

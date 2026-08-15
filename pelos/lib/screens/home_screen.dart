@@ -597,11 +597,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _abrirBackup() async {
-    await Navigator.of(context).push<void>(
+    final restaured = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => const BackupScreen(),
       ),
     );
+    if (restaured == true) {
+      setState(() {
+        _clientesReload++;
+        _agendaReload++;
+        _finanzasReload++;
+        _redesReload++;
+      });
+    }
   }
 
   void _showMessage(String message) {

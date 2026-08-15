@@ -15,6 +15,7 @@ class _BackupScreenState extends State<BackupScreen> {
   late Future<List<BackupFile>> _backupsFuture;
   String? _message;
   bool _isLoading = false;
+  bool _restored = false;
 
   @override
   void initState() {
@@ -85,11 +86,12 @@ class _BackupScreenState extends State<BackupScreen> {
     try {
       final jsonString = await backup.file.readAsString();
       await BackupService.importData(jsonString);
+      _restored = true;
       setState(() => _message = '✅ Datos restaurados exitosamente');
       if (mounted) {
         // Recargar la app después de restaurar
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.of(context).pop();
+          if (mounted) Navigator.of(context).pop(true);
         });
       }
     } catch (e) {
@@ -171,10 +173,14 @@ class _BackupScreenState extends State<BackupScreen> {
       setState(() => _isLoading = true);
       try {
         await BackupService.importDataFromFile(File(filePath));
-        setState(() => _message = '✅ Datos restaurados exitosamente');
+        _restored = true;
+        setState(() {
+          _message = '✅ Datos restaurados exitosamente';
+          _loadBackups();
+        });
         if (mounted) {
           Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) Navigator.of(context).pop();
+            if (mounted) Navigator.of(context).pop(true);
           });
         }
       } catch (e) {
