@@ -7,6 +7,7 @@ import 'config/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/licencia/licencia_gate.dart';
 import 'services/licencia_service.dart';
+import 'services/backup_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,8 @@ Future<void> main() async {
   await initializeDateFormatting('es_ES', null);
   // Arranca la prueba en el primer uso.
   await LicenciaService.instance.init();
+  // Crea backup automático si es necesario.
+  BackupService.maybeAutoBackup();
   runApp(const MyApp());
 }
 
