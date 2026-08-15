@@ -51,6 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Cambia para forzar la recarga de la pestaña de Redes tras un alta.
   int _redesReload = 0;
 
+  // Control del botón atrás: detecta doble toque para cerrar desde inicio
+  DateTime? _ultimaTocada;
+
   final List<String> _titles = [
     'Inicio',
     'Agenda',
@@ -97,9 +100,48 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Maneja el boton atras del dispositivo:
+  /// - Si esta en pantalla inicial, requiere doble toque para cerrar
+  /// - Si esta en otra pestana, navega a la anterior
+  Future<bool> _alPresionarAtras() async {
+    if (_selectedIndex == 0) {
+      // En pantalla inicial: requiere doble toque para cerrar
+      final ahora = DateTime.now();
+      if (_ultimaTocada != null &&
+          ahora.difference(_ultimaTocada!).inSeconds < 2) {
+        // Doble toque en menos de 2 segundos: cierra la app
+        return true;
+      }
+      // Primer toque: muestra mensaje y registra tiempo
+      _ultimaTocada = ahora;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Toca atrás otra vez para salir'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return false; // No cierra aún
+    } else {
+      // En otra pestaña: navega a la anterior
+      setState(() => _selectedIndex--);
+      return false; // No cierra
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        final debeCerrar = await _alPresionarAtras();
+        if (debeCerrar && mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(
           _titles[_selectedIndex],
@@ -215,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _selectedIndex = index;
             // Recarga automáticamente Finanzas al abrir su pestaña, para que
-            // refleje al instante los ingresos de citas recién completadas.
+            // refleja al instante los ingresos de citas recién completadas.
             if (index == 3) {
               _finanzasReload++;
             }
@@ -224,6 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _cargarResumen();
           }
         },
+      ),
       ),
     );
   }
