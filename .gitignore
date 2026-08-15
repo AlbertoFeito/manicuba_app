@@ -75,6 +75,6 @@ coverage/
 
 # Firma de release (NO versionar — contienen secretos)
 /android/key.properties
-/pelos/key.properties
+/pelos/android/key.properties
 **/*.jks
 **/*.keystore
