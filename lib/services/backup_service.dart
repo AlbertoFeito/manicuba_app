@@ -7,6 +7,30 @@ import 'package:sqflite/sqflite.dart';
 
 import 'database_helper.dart';
 
+/// Información de un archivo de backup.
+class BackupFile {
+  final String name;
+  final File file;
+  final DateTime createdAt;
+  final int sizeBytes;
+
+  BackupFile({
+    required this.name,
+    required this.file,
+    required this.createdAt,
+    required this.sizeBytes,
+  });
+
+  String get sizeFormatted {
+    if (sizeBytes < 1024) return '$sizeBytes B';
+    if (sizeBytes < 1024 * 1024) return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  String get dateFormatted => '${createdAt.day}/${createdAt.month}/${createdAt.year} '
+      '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+}
+
 /// Servicio de backup y restauración de datos.
 ///
 /// Permite exportar toda la base de datos a JSON, importarla desde JSON,
@@ -172,6 +196,66 @@ class BackupService {
     } catch (e) {
       // No fallar si el backup automático falla
       print('Auto backup error: $e');
+    }
+  }
+
+  /// Obtiene la carpeta de backups, creándola si no existe.
+  static Future<Directory> _getBackupDirectory() async {
+    final documentsDir = await getApplicationDocumentsDirectory();
+    final backupDir = Directory('${documentsDir.path}/Backups');
+    if (!await backupDir.exists()) {
+      await backupDir.create(recursive: true);
+    }
+    return backupDir;
+  }
+
+  /// Lista todos los archivos de backup disponibles, ordenados por fecha (más recientes primero).
+  static Future<List<BackupFile>> listBackups() async {
+    try {
+      final backupDir = await _getBackupDirectory();
+      final files = backupDir.listSync().whereType<File>().toList();
+
+      final backups = <BackupFile>[];
+      for (final file in files) {
+        if (file.path.endsWith('.json')) {
+          final stat = await file.stat();
+          final createdAt = stat.modified;
+          backups.add(BackupFile(
+            name: file.path.split('/').last,
+            file: file,
+            createdAt: createdAt,
+            sizeBytes: stat.size,
+          ));
+        }
+      }
+
+      // Ordenar por fecha, más recientes primero
+      backups.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return backups;
+    } catch (e) {
+      print('Error listing backups: $e');
+      return [];
+    }
+  }
+
+  /// Elimina un archivo de backup.
+  static Future<void> deleteBackup(BackupFile backup) async {
+    try {
+      if (await backup.file.exists()) {
+        await backup.file.delete();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Lee el contenido de un backup y lo retorna como Map.
+  static Future<Map<String, dynamic>> readBackupContent(BackupFile backup) async {
+    try {
+      final json = await backup.file.readAsString();
+      return jsonDecode(json) as Map<String, dynamic>;
+    } catch (e) {
+      rethrow;
     }
   }
 
