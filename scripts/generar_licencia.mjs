@@ -76,12 +76,14 @@ if (!deviceId) {
 const normalized = normalizeCode(deviceId);
 const licence = computeLicence(normalized, secret);
 
+const devSecrets = ['manicuba-dev-secret', 'pelucuba-dev-secret'];
+
 if (onlyCode) {
   process.stdout.write(licence);
 } else {
-  if (secret === 'manicuba-dev-secret') {
+  if (devSecrets.includes(secret)) {
     console.error(
-      'AVISO: usas el secreto de desarrollo. No sirve para vender.\n',
+      'AVISO: usas un secreto de desarrollo. No sirve para vender.\n',
     );
   }
   console.log(`Equipo:   ${group(normalized, 5)}`);

@@ -3,75 +3,93 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Generador de licencias · ManiCuba</title>
+    <title>Generador de licencias · ManiCuba / PeluCuba</title>
     <style>
-      :root { color-scheme: light dark; }
+      :root { color-scheme: light dark; --acento: #e91e63; }
       body {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         max-width: 560px; margin: 0 auto; padding: 24px; line-height: 1.5;
       }
-      h1 { color: #e91e63; font-size: 1.4rem; margin: 0 0 8px 0; }
-      .subtitle { color: #888; font-size: 0.9rem; margin: 0 0 24px 0; }
+      h1 { color: var(--acento); font-size: 1.4rem; }
       label { display: block; margin-top: 16px; font-weight: 600; }
-      input {
+      input, select {
         width: 100%; box-sizing: border-box; padding: 12px; font-size: 1rem;
         margin-top: 6px; border: 1px solid #bbb; border-radius: 8px;
-        letter-spacing: 1px;
       }
-      input:focus { outline: none; border-color: #e91e63; box-shadow: 0 0 0 3px rgba(233,30,99,.1); }
+      input { letter-spacing: 1px; }
       button {
         margin-top: 20px; width: 100%; padding: 14px; font-size: 1rem;
-        background: #e91e63; color: #fff; border: 0; border-radius: 10px;
-        cursor: pointer; font-weight: 600; transition: background 0.2s;
+        background: var(--acento); color: #fff; border: 0; border-radius: 10px;
+        cursor: pointer; font-weight: 600;
       }
-      button:hover { background: #c2185b; }
-      button:active { transform: scale(0.98); }
+      button.sec { background: #fff; color: var(--acento); border: 1px solid var(--acento); }
+      button.ok { background: #2e7d32 !important; color: #fff !important; }
       .out {
         margin-top: 20px; padding: 16px; border-radius: 10px;
-        background: rgba(233,30,99,.08); border: 1px solid #e91e63;
-        display: none;
+        background: color-mix(in srgb, var(--acento) 8%, transparent);
+        border: 1px solid var(--acento); display: none;
       }
       .out.show { display: block; }
-      .titulo-eq { color: #888; font-size: 0.9rem; margin-bottom: 4px; }
+      .app { font-weight: 700; color: var(--acento); margin-bottom: 8px; }
       .code {
-        font-size: 1.8rem; font-weight: 700; letter-spacing: 3px;
-        word-break: break-all; margin: 12px 0 16px; font-family: 'Monaco', 'Courier New', monospace;
-        padding: 12px; background: rgba(255,255,255,.5); border-radius: 6px;
+        font-size: 1.6rem; font-weight: 700; letter-spacing: 2px;
+        word-break: break-all; margin: 6px 0 12px;
       }
+      .row { display: flex; gap: 10px; }
+      .row button { margin-top: 0; }
       .muted { color: #888; font-size: .9rem; }
-      .warn { color: #c62828; font-size: .9rem; margin-top: 8px; font-weight: 600; }
-      .success { color: #2e7d32; font-size: .9rem; margin-top: 8px; }
-      .info { color: #1565c0; font-size: .9rem; margin-top: 12px; }
-      #copy { margin-top: 0; }
+      .warn { color: #c62828; font-size: .9rem; margin-top: 8px; }
     </style>
   </head>
   <body>
-    <h1>💅 ManiCuba · Generador de Licencias</h1>
-    <p class="subtitle">Herramienta offline para el vendedor</p>
-
+    <h1 id="titulo">💅 Generador de licencias · ManiCuba</h1>
     <p class="muted">
-      Introduce el <b>secreto de producción</b> y el <b>código de equipo</b> que te
-      envía la clienta. No compartas esta página ni el secreto.
+      Herramienta <b>offline</b> para el vendedor, común a todas las apps.
+      Elige la app, introduce su <b>secreto</b> (el mismo con el que se compiló
+      el APK) y el <b>código de equipo</b> que te envía la clienta. No compartas
+      esta página ni el secreto.
     </p>
 
-    <label for="secret">🔐 Secreto de Producción</label>
-    <input id="secret" type="text" placeholder="secreto-produccion-xyz" />
-    <p class="info" id="secretHint">Secreto por defecto (desarrollo): manicuba-dev-secret</p>
+    <label for="app">App</label>
+    <select id="app">
+      <option value="manicuba">💅 ManiCuba</option>
+      <option value="pelucuba">💇 PeluCuba</option>
+    </select>
 
-    <label for="device">📱 Código de Equipo</label>
+    <label for="secret">Secreto</label>
+    <input id="secret" type="text" placeholder="tu-secreto-de-produccion" />
+
+    <label for="cliente">Nombre de la clienta (opcional)</label>
+    <input id="cliente" type="text" placeholder="Ej. María Pérez" />
+
+    <label for="device">Código de equipo</label>
     <input id="device" type="text" placeholder="7K3M9-2QXBD" />
 
-    <button id="gen">🔓 Generar Licencia</button>
+    <button id="gen">Generar licencia</button>
 
     <div class="out" id="out">
-      <div class="titulo-eq">Licencia para <span id="eq"></span>:</div>
+      <div class="app" id="appline"></div>
+      <div class="muted" id="clienteline"></div>
+      <div class="muted">Equipo <span id="eq"></span> · Licencia:</div>
       <div class="code" id="lic"></div>
-      <button id="copy">✓ Copiar al portapapeles</button>
+      <div class="row">
+        <button id="copyLic" class="sec">Copiar licencia</button>
+        <button id="copyMsg">Copiar mensaje</button>
+      </div>
       <div class="warn" id="warn"></div>
-      <div class="success" id="success" style="display:none">✓ ¡Licencia copiada!</div>
     </div>
 
     <script>
+      // Todas las apps comparten EXACTAMENTE el mismo algoritmo (prefijo
+      // 'manicuba:v1:'); lo único que cambia entre apps es el secreto. El
+      // selector solo ajusta marca, color y el secreto de desarrollo por
+      // defecto — la licencia depende del secreto que escribas.
+      const APPS = {
+        manicuba: { nombre: 'ManiCuba', emoji: '💅', color: '#e91e63', dev: 'manicuba-dev-secret' },
+        pelucuba: { nombre: 'PeluCuba', emoji: '💇', color: '#6a1b9a', dev: 'pelucuba-dev-secret' },
+      };
+      const DEV_SECRETS = Object.values(APPS).map((a) => a.dev);
+
       const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
       const LICENCE_CHARS = 16;
 
@@ -108,67 +126,91 @@
         return toBase32(new Uint8Array(sig), LICENCE_CHARS);
       }
 
-      const $ = (id) => document.getElementById(id);
-      const dev_secret = 'manicuba-dev-secret';
+      // Copia robusta: portapapeles moderno si hay contexto seguro y, si no
+      // (típico al abrir el HTML como archivo local), respaldo con textarea.
+      async function copiarTexto(texto) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(texto);
+            return true;
+          }
+        } catch (e) { /* respaldo */ }
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = texto;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.top = '-1000px';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e) {
+          return false;
+        }
+      }
+      async function copiarConAviso(texto, btn) {
+        const original = btn.textContent;
+        const ok = await copiarTexto(texto);
+        btn.textContent = ok ? '✓ Copiado' : 'Selecciónalo y cópialo a mano';
+        btn.classList.toggle('ok', ok);
+        setTimeout(() => { btn.textContent = original; btn.classList.remove('ok'); }, 1800);
+      }
 
-      // Pre-llenar el campo de secreto con el secreto de desarrollo
-      $('secret').value = dev_secret;
+      const $ = (id) => document.getElementById(id);
+      let ultimaLic = '';
+      let ultimoMensaje = '';
+
+      function appActual() { return APPS[$('app').value]; }
+
+      function aplicarApp() {
+        const a = appActual();
+        document.documentElement.style.setProperty('--acento', a.color);
+        $('titulo').textContent = `${a.emoji} Generador de licencias · ${a.nombre}`;
+        $('secret').placeholder = `secreto de ${a.nombre} (ej. ${a.dev})`;
+      }
+      $('app').addEventListener('change', aplicarApp);
+      aplicarApp();
 
       $('gen').addEventListener('click', async () => {
+        const a = appActual();
         const secret = $('secret').value.trim();
         const device = normalizeCode($('device').value);
-
-        if (!secret) {
-          alert('Escribe el secreto de produccion.');
+        const cliente = $('cliente').value.trim();
+        if (!secret || !device) {
+          alert('Escribe el secreto y el código de equipo.');
           return;
         }
-        if (!device) {
-          alert('Escribe el codigo de equipo.');
-          return;
-        }
-
         const lic = await computeLicence(device, secret);
-        $('eq').textContent = group(device, 5);
-        $('lic').textContent = group(lic, 4);
-        $('success').style.display = 'none';
+        const eq = group(device, 5);
+        const licFmt = group(lic, 4);
 
-        // Mostrar advertencia si usa el secreto de desarrollo
-        if (secret === dev_secret) {
-          $('warn').textContent = '⚠️ AVISO: Secreto de desarrollo. No vale para vender.';
-        } else {
-          $('warn').textContent = '';
-        }
+        ultimaLic = licFmt;
+        ultimoMensaje =
+          `${a.nombre} ${a.emoji} — Licencia\n` +
+          (cliente ? `Cliente: ${cliente}\n` : '') +
+          `Equipo: ${eq}\n` +
+          `Licencia: ${licFmt}`;
 
+        $('appline').textContent = `${a.nombre} ${a.emoji} — Licencia`;
+        $('clienteline').textContent = cliente ? `Cliente: ${cliente}` : '';
+        $('clienteline').style.display = cliente ? 'block' : 'none';
+        $('eq').textContent = eq;
+        $('lic').textContent = licFmt;
+        $('warn').textContent = DEV_SECRETS.includes(secret)
+          ? 'AVISO: es un secreto de desarrollo, no sirve para vender.' : '';
         $('out').classList.add('show');
       });
 
-      $('copy').addEventListener('click', async () => {
-        const texto = $('lic').textContent.replace(/-/g, '');
-        try {
-          await navigator.clipboard.writeText(texto);
-
-          // Feedback visual
-          const btn = $('copy');
-          const textOriginal = btn.textContent;
-          btn.textContent = '✓ ¡Copiado!';
-          btn.style.background = '#2e7d32';
-
-          // Restaurar despues de 2 segundos
-          setTimeout(() => {
-            btn.textContent = textOriginal;
-            btn.style.background = '';
-            $('success').style.display = 'block';
-          }, 2000);
-        } catch (err) {
-          alert('Error al copiar: ' + err.message);
-        }
+      $('copyLic').addEventListener('click', (e) => {
+        if (ultimaLic) copiarConAviso(ultimaLic, e.currentTarget);
       });
-
-      // Permitir Enter para generar
-      $('device').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          $('gen').click();
-        }
+      $('copyMsg').addEventListener('click', (e) => {
+        if (ultimoMensaje) copiarConAviso(ultimoMensaje, e.currentTarget);
       });
     </script>
   </body>

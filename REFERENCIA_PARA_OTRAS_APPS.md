@@ -24,19 +24,13 @@ ManiCuba está **lista para venta directa** con:
   - Pantallas y UI (14 screens)
   - Tests y validaciones
 
-### Para implementar el sistema de licencias:
-- **`INTEGRACION_LICENCIAS_PARA_OTRAS_APPS.md`** - Guía paso a paso
-  - Archivos a copiar
-  - Cambios necesarios (secreto, nombres)
-  - Validación e testing
-  - Troubleshooting
-
-### Para configuración centralizada:
-- **`LICENCIAS_CONFIGURACION.md`** - Sistema multi-app
-  - Secretos de producción
-  - Estructura de compilación
-  - Flujo de venta directa
-  - Rotación de secretos
+### Para el sistema de licencias (documento único):
+- **`LICENCIAS.md`** - Sistema de licencias multi-app
+  - Algoritmo común y secreto por app
+  - Generador único (`herramientas/generador-licencias.html`)
+  - Secretos de producción y compilación de venta
+  - Vectores de verificación correctos
+  - Flujo de venta y rotación de secretos
 
 ### Para inicio rápido:
 - **`INICIACION_RAPIDA.md`** - Setup del proyecto
@@ -205,8 +199,7 @@ flutter build apk --release \
 ## 📞 Contacto y Soporte
 
 Para dudas sobre la integración:
-- Ver `INTEGRACION_LICENCIAS_PARA_OTRAS_APPS.md` - Troubleshooting
-- Ver `LICENCIAS_CONFIGURACION.md` - Configuración centralizada
+- Ver `LICENCIAS.md` - Sistema de licencias (documento único)
 - Ver `MANICUBA_FEATURES.md` - Detalles técnicos
 
 ---
