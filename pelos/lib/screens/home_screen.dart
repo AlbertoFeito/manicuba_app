@@ -14,6 +14,7 @@ import 'licencia/licencia_screen.dart';
 import 'redes_sociales/redes_screen.dart';
 import 'redes_sociales/post_form_screen.dart';
 import 'servicios/servicios_screen.dart';
+import 'backup_screen.dart';
 import '../services/cita_service.dart';
 import '../services/finanzas_service.dart';
 import '../config/ayuda_content.dart';
@@ -159,6 +160,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _abrirGaleria();
                 } else if (value == 'historial') {
                   _abrirHistorial();
+                } else if (value == 'backup') {
+                  _abrirBackup();
                 } else if (value == 'licencia') {
                   _abrirLicencia();
                 }
@@ -193,6 +196,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListTile(
                     leading: Icon(Icons.photo_library),
                     title: Text('Galería de trabajos'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'backup',
+                  child: ListTile(
+                    leading: Icon(Icons.backup),
+                    title: Text('Backup de datos'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
@@ -583,6 +594,14 @@ class _HomeScreenState extends State<HomeScreen> {
         _clientesReload++;
       });
     }
+  }
+
+  Future<void> _abrirBackup() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const BackupScreen(),
+      ),
+    );
   }
 
   void _showMessage(String message) {
