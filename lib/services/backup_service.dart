@@ -276,10 +276,8 @@ class BackupService {
 
   /// Valida que un JSON sea un backup válido de ManiCuba/PeluCuba.
   static bool isValidBackup(Map<String, dynamic> data) {
-    // Verificar que tenga los campos requeridos
-    final requiredFields = [
-      'exportDate',
-      'dbVersion',
+    // Campos tabla que deben existir y ser listas
+    final tablesToCheck = [
       'clientes',
       'citas',
       'productos',
@@ -290,12 +288,12 @@ class BackupService {
       'movimientos_inventario',
     ];
 
-    for (final field in requiredFields) {
-      if (!data.containsKey(field)) {
+    for (final table in tablesToCheck) {
+      if (!data.containsKey(table)) {
         return false;
       }
       // Verificar que sean listas
-      if (data[field] is! List) {
+      if (data[table] is! List) {
         return false;
       }
     }
