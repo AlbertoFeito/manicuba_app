@@ -1,0 +1,8 @@
+# Plantilla de configuración de firma de release.
+# Copia este archivo como `key.properties` (en la carpeta android/) y rellena
+# los valores reales. NUNCA subas key.properties ni el .jks al repositorio:
+# ya están en .gitignore.
+storePassword=TU_PASSWORD_DEL_ALMACEN
+keyPassword=TU_PASSWORD_DE_LA_CLAVE
+keyAlias=pelucuba
+storeFile=pelucuba-release.jks
