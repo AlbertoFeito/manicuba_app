@@ -332,12 +332,13 @@ class BackupService {
     }
   }
 
-  /// Genera un nombre de archivo para el backup con fecha y nombre de tienda.
+  /// Genera un nombre de archivo para el backup con fecha, hora y nombre de tienda.
   static String _backupFilename(String storeName) {
     final now = DateTime.now();
     final date = '${now.year}-${_pad(now.month)}-${_pad(now.day)}';
+    final time = '${_pad(now.hour)}-${_pad(now.minute)}-${_pad(now.second)}';
     final slug = _slugify(storeName);
-    return '$slug-copia-$date.json';
+    return '$slug-copia-$date-$time.json';
   }
 
   static String _pad(int n) => n.toString().padLeft(2, '0');
