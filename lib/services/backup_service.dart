@@ -42,8 +42,6 @@ class BackupService {
   factory BackupService() => _instance;
   BackupService._();
 
-  static const String _lastBackupKey = 'backup_last_backup_at';
-
   /// Sobrescribe la detección de plataforma "móvil" (Android/iOS) en tests.
   /// En producción queda en `null` y se usa el sistema operativo real. Guardar
   /// y compartir archivos solo tiene sentido en móvil; en escritorio/web las

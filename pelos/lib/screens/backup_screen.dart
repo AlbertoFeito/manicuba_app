@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../services/backup_service.dart';
-import '../config/theme.dart';
 
 class BackupScreen extends StatefulWidget {
   const BackupScreen({super.key});
@@ -15,7 +14,6 @@ class _BackupScreenState extends State<BackupScreen> {
   late Future<List<BackupFile>> _backupsFuture;
   String? _message;
   bool _isLoading = false;
-  bool _restored = false;
 
   @override
   void initState() {
@@ -86,7 +84,6 @@ class _BackupScreenState extends State<BackupScreen> {
     try {
       final jsonString = await backup.file.readAsString();
       await BackupService.importData(jsonString);
-      _restored = true;
       setState(() => _message = '✅ Datos restaurados exitosamente');
       if (mounted) {
         // Recargar la app después de restaurar
@@ -173,7 +170,6 @@ class _BackupScreenState extends State<BackupScreen> {
       setState(() => _isLoading = true);
       try {
         await BackupService.importDataFromFile(File(filePath));
-        _restored = true;
         setState(() {
           _message = '✅ Datos restaurados exitosamente';
           _loadBackups();

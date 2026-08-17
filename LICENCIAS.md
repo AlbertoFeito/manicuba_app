@@ -19,8 +19,8 @@ entre apps es **el secreto**. Una licencia de una app no sirve en otra.
 
 | App      | applicationId                    | Secreto de desarrollo   | Secreto de producción                       |
 |----------|----------------------------------|-------------------------|---------------------------------------------|
-| ManiCuba | `com.albertofeito.manicuba_app`  | `manicuba-dev-secret`   | `manicuba-prod-v1-2024-secure-key-xyz789`   |
-| PeluCuba | `com.albertofeito.pelucuba_app`  | `pelucuba-dev-secret`   | `pelucuba-prod-v1-2024-secure-key-xyz789`   |
+| ManiCuba | `com.albertofeito.manicuba_app`  | `manicuba-dev-secret`   | `<TU_SECRETO_DE_PRODUCCION>`   |
+| PeluCuba | `com.albertofeito.pelucuba_app`  | `pelucuba-dev-secret`   | `<TU_SECRETO_DE_PRODUCCION>`   |
 
 > Los secretos de producción se guardan (fuera de aquí) en `SECRETO_PRODUCCION.txt`
 > de cada app. El de desarrollo solo sirve para probar; NO genera licencias de venta.
@@ -47,11 +47,11 @@ LICENSE_SECRET=<secreto> node scripts/generar_licencia.mjs 7K3M9-2QXBD
 ```bash
 # ManiCuba (desde la raíz del repo)
 flutter build apk --release \
-  --dart-define=LICENSE_SECRET=manicuba-prod-v1-2024-secure-key-xyz789
+  --dart-define=LICENSE_SECRET=<TU_SECRETO_DE_PRODUCCION>
 
 # PeluCuba (desde pelos/)
 cd pelos && flutter build apk --release \
-  --dart-define=LICENSE_SECRET=pelucuba-prod-v1-2024-secure-key-xyz789
+  --dart-define=LICENSE_SECRET=<TU_SECRETO_DE_PRODUCCION>
 ```
 Sin `--dart-define` se usa el secreto de desarrollo (solo pruebas).
 
@@ -60,9 +60,9 @@ Sin `--dart-define` se usa el secreto de desarrollo (solo pruebas).
 | Secreto                                       | Licencia esperada       |
 |-----------------------------------------------|-------------------------|
 | `manicuba-dev-secret`                         | `0ERE-DAE5-DDSZ-ESAP`   |
-| `manicuba-prod-v1-2024-secure-key-xyz789`     | `FQ57-6JE1-66PJ-A888`   |
+| `<TU_SECRETO_DE_PRODUCCION>`     | `FQ57-6JE1-66PJ-A888`   |
 | `pelucuba-dev-secret`                         | `NFA9-KYPE-FZFM-6T7F`   |
-| `pelucuba-prod-v1-2024-secure-key-xyz789`     | `8H2H-XE2H-BCKC-8D8B`   |
+| `<TU_SECRETO_DE_PRODUCCION>`     | `8H2H-XE2H-BCKC-8D8B`   |
 
 > Nota: el valor `XGKM-KGCJ-G2BG-P8GJ` que aparecía en la documentación antigua
 > era **incorrecto** (no coincide con el algoritmo real). Usa la tabla de arriba.
