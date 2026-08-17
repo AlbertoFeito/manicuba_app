@@ -78,3 +78,7 @@ coverage/
 /pelos/android/key.properties
 **/*.jks
 **/*.keystore
+
+# Secretos de licencia (nunca versionar) — guarda tu copia local a salvo
+SECRETO_PRODUCCION.txt
+pelos/SECRETO_PRODUCCION.txt

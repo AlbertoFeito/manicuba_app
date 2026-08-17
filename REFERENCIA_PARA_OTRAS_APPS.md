@@ -97,7 +97,7 @@ openssl rand -hex 16
 ### 6. Compilar para Producción
 ```bash
 flutter build apk --release \
-  --dart-define=LICENSE_SECRET=pelucuba-prod-v1-2024-secure-key-xyz789
+  --dart-define=LICENSE_SECRET=<TU_SECRETO_DE_PRODUCCION>
 ```
 
 ## 🔄 Modelo de Venta (Freemium + Viral)

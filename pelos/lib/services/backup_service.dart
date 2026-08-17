@@ -41,8 +41,6 @@ class BackupService {
   factory BackupService() => _instance;
   BackupService._();
 
-  static const String _lastBackupKey = 'backup_last_backup_at';
-
   /// Exporta toda la base de datos a JSON.
   static Future<String> exportData() async {
     final db = await DatabaseHelper().database;

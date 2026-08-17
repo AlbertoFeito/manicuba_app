@@ -185,7 +185,7 @@ cd /home/user/manicuba_app
 
 # Compilar con MISMO certificado
 flutter build apk --release \
-  --dart-define=LICENSE_SECRET=manicuba-prod-v1-2024-secure-key-xyz789
+  --dart-define=LICENSE_SECRET=<TU_SECRETO_DE_PRODUCCION>
 
 # Verificar firma
 apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
@@ -201,7 +201,7 @@ cd /home/user/manicuba_app/pelos
 
 # Compilar con MISMO certificado
 flutter build apk --release \
-  --dart-define=LICENSE_SECRET=pelucuba-prod-v1-2024-secure-key-xyz789
+  --dart-define=LICENSE_SECRET=<TU_SECRETO_DE_PRODUCCION>
 
 # Verificar firma
 apksigner verify --print-certs dist/PeluCuba-1.0.4-venta.apk
@@ -322,7 +322,7 @@ flutter build apk --release
 **Correcto:**
 ```bash
 flutter build apk --release \
-  --dart-define=LICENSE_SECRET=manicuba-prod-v1-2024-secure-key-xyz789
+  --dart-define=LICENSE_SECRET=<TU_SECRETO_DE_PRODUCCION>
 ```
 
 ## 📞 Si Un Cliente Perdió Sus Datos
