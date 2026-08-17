@@ -51,7 +51,8 @@ void main() {
     );
   }
 
-  testWidgets('muestra contacto, notas e historial con la cita', (tester) async {
+  testWidgets('muestra contacto, notas e historial con la cita',
+      (tester) async {
     await tester.runAsync(() async {
       final cliente = await crearCliente(notas: 'Prefiere tonos nude');
       final svc = 'Manicura ${DateTime.now().microsecondsSinceEpoch}';
