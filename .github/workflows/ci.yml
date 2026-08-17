@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Tests y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # sqflite_common_ffi (usado en los tests) carga libsqlite3 del sistema.
+      - name: Instalar libsqlite3
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Tests con cobertura
+        run: flutter test --coverage
+
+      # Umbral de cobertura: falla si el total de líneas cae por debajo del
+      # mínimo. Se calcula directo del lcov, sin acciones externas.
+      - name: Comprobar umbral de cobertura
+        env:
+          MIN_COVERAGE: '70'
+        run: |
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::error::No se generó coverage/lcov.info"
+            exit 1
+          fi
+          pct=$(awk -F: '
+            /^LF:/ { lf += $2 }
+            /^LH:/ { lh += $2 }
+            END { if (lf > 0) printf "%.1f", 100 * lh / lf; else print "0" }
+          ' coverage/lcov.info)
+          echo "Cobertura total de líneas: ${pct}% (mínimo ${MIN_COVERAGE}%)"
+          if awk -v p="$pct" -v m="$MIN_COVERAGE" 'BEGIN { exit !(p + 0 >= m + 0) }'; then
+            echo "OK: la cobertura cumple el umbral."
+          else
+            echo "::error::Cobertura ${pct}% por debajo del umbral ${MIN_COVERAGE}%"
+            exit 1
+          fi
+
+      - name: Publicar el informe de cobertura como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: ignore
