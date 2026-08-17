@@ -1,0 +1,7 @@
+# Los tests comparten una única base de datos SQLite en disco (ver
+# test/flutter_test_config.dart, que apunta databaseFactoryFfi a una ruta
+# fija). Ejecutar los archivos de test en paralelo hace que varios isolates
+# escriban a la vez y SQLite falle con "database is locked" (code 5),
+# especialmente al recolectar cobertura. Serializamos la ejecución para que
+# la suite —y `flutter test --coverage`— sea determinista.
+concurrency: 1
