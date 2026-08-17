@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
@@ -42,6 +43,16 @@ class BackupService {
   BackupService._();
 
   static const String _lastBackupKey = 'backup_last_backup_at';
+
+  /// Sobrescribe la detección de plataforma "móvil" (Android/iOS) en tests.
+  /// En producción queda en `null` y se usa el sistema operativo real. Guardar
+  /// y compartir archivos solo tiene sentido en móvil; en escritorio/web las
+  /// operaciones correspondientes se saltan o lanzan.
+  @visibleForTesting
+  static bool? debugIsMobileOverride;
+
+  static bool get _esMovil =>
+      debugIsMobileOverride ?? (Platform.isAndroid || Platform.isIOS);
 
   /// Exporta toda la base de datos a JSON.
   static Future<String> exportData() async {
@@ -141,8 +152,8 @@ class BackupService {
       final json = await exportData();
       final filename = _backupFilename(storeName ?? 'ManiCuba');
 
-      // En web, descargar directamente
-      if (!Platform.isAndroid && !Platform.isIOS) {
+      // En web/escritorio, descargar directamente
+      if (!_esMovil) {
         return null; // Web requiere otra implementación
       }
 
@@ -169,7 +180,7 @@ class BackupService {
       final filename = _backupFilename(storeName ?? 'ManiCuba');
 
       // En dispositivos, guardar temporalmente y compartir
-      if (Platform.isAndroid || Platform.isIOS) {
+      if (_esMovil) {
         final tempDir = await getTemporaryDirectory();
         final file = File('${tempDir.path}/$filename');
         await file.writeAsString(json);
@@ -192,7 +203,7 @@ class BackupService {
   /// Crea un backup automático solo si no existe uno del día actual.
   static Future<void> maybeAutoBackup() async {
     try {
-      if (!Platform.isAndroid && !Platform.isIOS) {
+      if (!_esMovil) {
         return; // No auto-backup en web
       }
 

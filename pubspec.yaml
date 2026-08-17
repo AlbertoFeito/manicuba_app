@@ -44,6 +44,12 @@ dev_dependencies:
   json_serializable: ^6.9.0
   sqflite_common_ffi: ^2.3.3
   flutter_launcher_icons: ^0.14.1
+  # Interfaces de plataforma usadas por los mocks de los tests
+  # (path_provider y share_plus). Ya vienen como dependencias transitivas;
+  # se declaran aquí para poder importarlas explícitamente en test/.
+  plugin_platform_interface: ^2.1.8
+  path_provider_platform_interface: ^2.1.2
+  share_plus_platform_interface: ^5.0.2
 
 # Configuración del icono de la app (manicura).
 flutter_launcher_icons:

@@ -12,11 +12,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path_provider/path_provider.dart';
-
 import 'package:manicuba_app/models/cliente.dart';
 import 'package:manicuba_app/services/backup_service.dart';
 import 'package:manicuba_app/services/cliente_service.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'support/fake_path_provider.dart';
 
@@ -33,7 +32,9 @@ void main() {
   Future<Directory> backupDir() async {
     final docs = await getApplicationDocumentsDirectory();
     final dir = Directory('${docs.path}/Backups');
-    if (!dir.existsSync()) dir.createSync(recursive: true);
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
     return dir;
   }
 
@@ -119,7 +120,9 @@ void main() {
     // En Linux Platform.isAndroid/isIOS es false: la función arma el nombre
     // (ejercita el slug y el padding de fecha) y devuelve null antes de
     // escribir. No debe lanzar.
-    final ruta = await BackupService.createBackupFile(storeName: 'Mi Salón!! **');
+    final ruta = await BackupService.createBackupFile(
+      storeName: 'Mi Salón!! **',
+    );
     expect(ruta, isNull);
   });
 
