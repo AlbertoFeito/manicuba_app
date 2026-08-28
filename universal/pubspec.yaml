@@ -1,7 +1,7 @@
 name: multiservicios_app
 description: App de gestión para salones de servicios (manicura, peluquería, spa y más) - Offline first
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

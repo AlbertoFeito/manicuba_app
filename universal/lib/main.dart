@@ -15,11 +15,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Carga los datos de formato de fecha en español (meses, días).
   await initializeDateFormatting('es_ES', null);
+  await _cargarRubroGuardado();
+  runApp(const Restarter(child: MyApp()));
+}
 
-  // Si ya se eligió un rubro en un arranque anterior, se carga ahora para
-  // que el tema y los textos correctos estén listos antes del primer frame.
-  // Si es la primera vez, AppConfig.instance.cargado queda en false y
-  // MyApp muestra el selector de rubro (BusinessTypeScreen) en su lugar.
+/// Carga en [AppConfig]/[AppTheme] el rubro guardado de un arranque anterior
+/// (si existe) y arranca/continúa su prueba de licencia. Se separó de
+/// `main()` para poder llamarlo también después de un reinicio en caliente
+/// (ver [Restarter]) sin duplicar lógica.
+Future<void> _cargarRubroGuardado() async {
   final prefs = await SharedPreferences.getInstance();
   final tipoGuardado = prefs.getString(AppConfig.prefsKey);
   if (tipoGuardado != null) {
@@ -44,22 +48,38 @@ Future<void> main() async {
   if (AppConfig.instance.cargado) {
     BackupService.maybeAutoBackup();
   }
-
-  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+/// Permite reconstruir toda la app desde cero sin reiniciar el proceso.
+/// Se usa tanto al terminar el onboarding (primer rubro elegido) como al
+/// cambiar de rubro después, desde el menú de Inicio — ver
+/// `screens/onboarding/business_type_screen.dart`.
+class Restarter extends StatefulWidget {
+  const Restarter({super.key, required this.child});
+
+  final Widget child;
+
+  static void reiniciar(BuildContext context) {
+    context.findAncestorStateOfType<_RestarterState>()?._reiniciar();
+  }
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<Restarter> createState() => _RestarterState();
 }
 
-class _MyAppState extends State<MyApp> {
-  /// Llamado por [BusinessTypeScreen] tras guardar la elección, para que el
-  /// `MaterialApp` se reconstruya con el tema y la pantalla de inicio ya
-  /// correctos, sin necesidad de reiniciar la app.
-  void _onRubroElegido() => setState(() {});
+class _RestarterState extends State<Restarter> {
+  Key _key = UniqueKey();
+
+  void _reiniciar() => setState(() => _key = UniqueKey());
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(key: _key, child: widget.child);
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +100,7 @@ class _MyAppState extends State<MyApp> {
       ],
       home: AppConfig.instance.cargado
           ? const LicenciaGate(child: HomeScreen())
-          : BusinessTypeScreen(onSeleccionado: _onRubroElegido),
+          : const BusinessTypeScreen(),
     );
   }
 }

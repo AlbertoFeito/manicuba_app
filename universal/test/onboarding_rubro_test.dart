@@ -74,7 +74,7 @@ void main() {
         SharedPreferences.setMockInitialValues({});
         await DatabaseHelper().deleteDatabase();
 
-        await tester.pumpWidget(const MyApp());
+        await tester.pumpWidget(const Restarter(child: MyApp()));
         await _bombearHasta(tester, find.text('¿A qué te dedicas?'));
         expect(find.text('${config.label} ${config.emoji}'), findsOneWidget);
 

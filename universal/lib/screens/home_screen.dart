@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../config/business_config.dart';
 import '../config/theme.dart';
 import 'agenda/agenda_screen.dart';
@@ -11,6 +12,7 @@ import 'finanzas/gasto_form_screen.dart';
 import 'galeria/galeria_screen.dart';
 import 'inventario/inventario_screen.dart';
 import 'licencia/licencia_screen.dart';
+import 'onboarding/business_type_screen.dart';
 import 'redes_sociales/redes_screen.dart';
 import 'redes_sociales/post_form_screen.dart';
 import 'servicios/servicios_screen.dart';
@@ -139,8 +141,13 @@ class _HomeScreenState extends State<HomeScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final debeCerrar = await _alPresionarAtras();
-        if (debeCerrar && mounted) {
-          Navigator.of(context).pop();
+        if (debeCerrar) {
+          // Inicio es la pantalla raíz (no hay una ruta anterior a la que
+          // volver): Navigator.pop() aquí no cierra la app, deja la
+          // pantalla en negro porque saca la única ruta del stack sin
+          // reemplazarla. SystemNavigator.pop() sí le pide a Android que
+          // cierre/minimice la actividad, como se espera del botón atrás.
+          await SystemNavigator.pop();
         }
       },
       child: Scaffold(
@@ -171,6 +178,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _abrirBackup();
               } else if (value == 'licencia') {
                 _abrirLicencia();
+              } else if (value == 'cambiar_rubro') {
+                _abrirCambiarRubro();
               }
             },
             itemBuilder: (_) => [
@@ -214,11 +223,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'licencia',
                 child: ListTile(
                   leading: Icon(Icons.workspace_premium),
                   title: Text('Licencia'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'cambiar_rubro',
+                child: ListTile(
+                  leading: Icon(Icons.storefront),
+                  title: Text('Cambiar tipo de negocio'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -572,6 +590,17 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => const LicenciaScreen(),
+      ),
+    );
+  }
+
+  /// Al elegir un rubro (incluso el mismo que ya está activo), la pantalla
+  /// reinicia toda la app (ver [Restarter]) — este `push` nunca vuelve con
+  /// un resultado normal en ese caso, y eso es lo esperado.
+  Future<void> _abrirCambiarRubro() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const BusinessTypeScreen(esCambio: true),
       ),
     );
   }
