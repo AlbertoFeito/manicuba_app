@@ -4,9 +4,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/models/cliente.dart';
-import 'package:gestorpro_app/screens/clientes/clientes_screen.dart';
-import 'package:gestorpro_app/services/cliente_service.dart';
+import 'package:multiservicios_app/models/cliente.dart';
+import 'package:multiservicios_app/screens/clientes/clientes_screen.dart';
+import 'package:multiservicios_app/services/cliente_service.dart';
 
 Future<void> bombearHasta(WidgetTester tester, Finder buscado) async {
   for (var i = 0; i < 40 && buscado.evaluate().isEmpty; i++) {

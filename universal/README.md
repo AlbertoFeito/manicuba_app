@@ -1,4 +1,4 @@
-# GestorPro (nombre de trabajo)
+# Multiservicios
 
 App de gestión para salones de servicios (manicura, peluquería, spa y los que
 se agreguen), construida sobre el mismo motor que ManiCuba y PeluCuba pero
@@ -49,8 +49,13 @@ Necesita su propia keystore de producción (`android/key.properties` +
 
 ## Pendiente antes de publicar
 
-- Nombre e ícono definitivos (hoy usa el ícono de ManiCuba como placeholder
-  y el nombre de trabajo "GestorPro").
-- Generar keystore de producción propio.
+- Ícono definitivo (hoy usa el ícono de ManiCuba como placeholder; el nombre
+  "Multiservicios" ya es definitivo).
 - Decidir si se agrega una pantalla de ajustes para cambiar de rubro después
   del onboarding (hoy solo se elige una vez, al primer arranque).
+
+## Releases
+
+Los APK firmados con la keystore de producción se publican en `release/`
+dentro de esta carpeta (ver ahí el más reciente). El keystore y
+`key.properties` en sí NO se versionan (ver `.gitignore`); guárdalos aparte.

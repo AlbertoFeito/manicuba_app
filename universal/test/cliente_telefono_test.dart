@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/cliente.dart';
-import 'package:gestorpro_app/screens/clientes/cliente_form_screen.dart';
-import 'package:gestorpro_app/services/cliente_service.dart';
+import 'package:multiservicios_app/models/cliente.dart';
+import 'package:multiservicios_app/screens/clientes/cliente_form_screen.dart';
+import 'package:multiservicios_app/services/cliente_service.dart';
 
 /// Al guardar con éxito, el formulario muestra un SnackBar y hace
 /// Navigator.pop(); como en este test se pumpea como ruta única (sin nada

@@ -9,10 +9,10 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/models/post_redes.dart';
-import 'package:gestorpro_app/services/compartir_nativo.dart';
-import 'package:gestorpro_app/services/compartir_service.dart';
-import 'package:gestorpro_app/services/foto_service.dart';
+import 'package:multiservicios_app/models/post_redes.dart';
+import 'package:multiservicios_app/services/compartir_nativo.dart';
+import 'package:multiservicios_app/services/compartir_service.dart';
+import 'package:multiservicios_app/services/foto_service.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 

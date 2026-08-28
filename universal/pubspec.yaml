@@ -1,4 +1,4 @@
-name: gestorpro_app
+name: multiservicios_app
 description: App de gestión para salones de servicios (manicura, peluquería, spa y más) - Offline first
 publish_to: 'none'
 version: 0.1.0+1

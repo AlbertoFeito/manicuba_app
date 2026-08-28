@@ -3,7 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:gestorpro_app/services/categoria_service.dart';
+import 'package:multiservicios_app/services/categoria_service.dart';
 
 void main() {
   setUp(() {

@@ -6,13 +6,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/database/database_helper.dart';
-import 'package:gestorpro_app/models/foto_trabajo.dart';
-import 'package:gestorpro_app/models/post_redes.dart';
-import 'package:gestorpro_app/screens/redes_sociales/post_form_screen.dart';
-import 'package:gestorpro_app/services/compartir_service.dart';
-import 'package:gestorpro_app/services/foto_service.dart';
-import 'package:gestorpro_app/services/redes_service.dart';
+import 'package:multiservicios_app/database/database_helper.dart';
+import 'package:multiservicios_app/models/foto_trabajo.dart';
+import 'package:multiservicios_app/models/post_redes.dart';
+import 'package:multiservicios_app/screens/redes_sociales/post_form_screen.dart';
+import 'package:multiservicios_app/services/compartir_service.dart';
+import 'package:multiservicios_app/services/foto_service.dart';
+import 'package:multiservicios_app/services/redes_service.dart';
 
 /// Igual que en cliente_telefono_test.dart: el formulario hace
 /// Navigator.pop() al guardar y aquí no hay nada debajo, así que

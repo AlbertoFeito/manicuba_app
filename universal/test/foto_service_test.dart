@@ -5,8 +5,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/models/foto_trabajo.dart';
-import 'package:gestorpro_app/services/foto_service.dart';
+import 'package:multiservicios_app/models/foto_trabajo.dart';
+import 'package:multiservicios_app/services/foto_service.dart';
 
 import 'support/fake_path_provider.dart';
 

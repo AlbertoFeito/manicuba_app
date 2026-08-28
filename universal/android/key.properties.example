@@ -4,5 +4,5 @@
 # ya están en .gitignore.
 storePassword=TU_PASSWORD_DEL_ALMACEN
 keyPassword=TU_PASSWORD_DE_LA_CLAVE
-keyAlias=gestorpro
-storeFile=gestorpro-release.jks
+keyAlias=multiservicios
+storeFile=multiservicios-release.jks

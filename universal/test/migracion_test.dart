@@ -8,8 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'package:gestorpro_app/config/constants.dart';
-import 'package:gestorpro_app/database/database_helper.dart';
+import 'package:multiservicios_app/config/constants.dart';
+import 'package:multiservicios_app/database/database_helper.dart';
 
 /// Esquema tal y como era en la versión 1, antes de conectar el inventario
 /// con las finanzas: sin `gastos.producto_id` y sin tabla de movimientos.

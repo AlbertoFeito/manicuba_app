@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Generador de licencias · GestorPro</title>
+    <title>Generador de licencias · Multiservicios</title>
     <style>
       :root { color-scheme: light dark; --acento: #3949ab; }
       body {
@@ -42,9 +42,9 @@
     </style>
   </head>
   <body>
-    <h1 id="titulo">🧭 Generador de licencias · GestorPro</h1>
+    <h1 id="titulo">🧭 Generador de licencias · Multiservicios</h1>
     <p class="muted">
-      Herramienta <b>offline</b> para el vendedor. GestorPro es una sola app
+      Herramienta <b>offline</b> para el vendedor. Multiservicios es una sola app
       con varios rubros (Manicura, Peluquería, Spa...); cada rubro es un
       producto con su propia licencia. Elige el <b>rubro</b>, introduce el
       <b>secreto</b> (el mismo con el que se compiló el APK — es uno solo
@@ -59,7 +59,7 @@
       <option value="spa">🧖 Spa / Estética</option>
     </select>
 
-    <label for="secret">Secreto de producción de GestorPro</label>
+    <label for="secret">Secreto de producción de Multiservicios</label>
     <input id="secret" type="text" placeholder="tu-secreto-de-produccion" />
 
     <label for="cliente">Nombre de la clienta (opcional)</label>
@@ -84,7 +84,7 @@
     </div>
 
     <script>
-      // Una sola app (GestorPro), un solo secreto de compilación. Lo que
+      // Una sola app (Multiservicios), un solo secreto de compilación. Lo que
       // hace que una licencia sirva solo para "Manicura" y no para "Spa" en
       // el mismo equipo es que el rubro entra en el mensaje firmado
       // ('app:v1:<rubro>:<deviceId>') — ver lib/services/licencia_service.dart.
@@ -93,7 +93,7 @@
         peluqueria: { nombre: 'Peluquería',      emoji: '💇', color: '#6a1b9a' },
         spa:        { nombre: 'Spa / Estética',  emoji: '🧖', color: '#00897b' },
       };
-      const DEV_SECRET = 'gestorpro-dev-secret';
+      const DEV_SECRET = 'multiservicios-dev-secret';
 
       const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
       const LICENCE_CHARS = 16;
@@ -175,7 +175,7 @@
       function aplicarRubro() {
         const r = rubroActual();
         document.documentElement.style.setProperty('--acento', r.color);
-        $('titulo').textContent = `${r.emoji} Generador de licencias · GestorPro ${r.nombre}`;
+        $('titulo').textContent = `${r.emoji} Generador de licencias · Multiservicios ${r.nombre}`;
       }
       $('rubro').addEventListener('change', aplicarRubro);
       aplicarRubro();
@@ -196,12 +196,12 @@
 
         ultimaLic = licFmt;
         ultimoMensaje =
-          `GestorPro ${r.nombre} ${r.emoji} — Licencia\n` +
+          `Multiservicios ${r.nombre} ${r.emoji} — Licencia\n` +
           (cliente ? `Cliente: ${cliente}\n` : '') +
           `Equipo: ${eq}\n` +
           `Licencia: ${licFmt}`;
 
-        $('appline').textContent = `GestorPro ${r.nombre} ${r.emoji} — Licencia`;
+        $('appline').textContent = `Multiservicios ${r.nombre} ${r.emoji} — Licencia`;
         $('clienteline').textContent = cliente ? `Cliente: ${cliente}` : '';
         $('clienteline').style.display = cliente ? 'block' : 'none';
         $('eq').textContent = eq;

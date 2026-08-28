@@ -52,7 +52,7 @@ class BusinessConfig {
   final String label;
 
   /// Nombre completo usado en saludos, mensajes de licencia y nombres de
-  /// archivo de backup (p. ej. "GestorPro Manicura").
+  /// archivo de backup (p. ej. "Multiservicios Manicura").
   final String appName;
 
   final String emoji;
@@ -80,13 +80,13 @@ const Map<BusinessType, BusinessConfig> kBusinessConfigs = {
   BusinessType.manicura: BusinessConfig(
     tipo: BusinessType.manicura,
     label: 'Manicura',
-    appName: 'GestorPro Manicura',
+    appName: 'Multiservicios Manicura',
     emoji: '💅',
     iconoServicios: Icons.spa,
     primaryColor: Color(0xFFE91E63),
     primaryLight: Color(0xFFF48FB1),
     primaryDark: Color(0xFFC2185B),
-    saludo: '¡Bienvenida a GestorPro Manicura! 💅',
+    saludo: '¡Bienvenida a Multiservicios Manicura! 💅',
     subtitulo: 'Tu asistente personal para gestionar tu negocio de manicura',
     categoriasProductos: [
       'Esmaltes',
@@ -124,13 +124,13 @@ const Map<BusinessType, BusinessConfig> kBusinessConfigs = {
   BusinessType.peluqueria: BusinessConfig(
     tipo: BusinessType.peluqueria,
     label: 'Peluquería',
-    appName: 'GestorPro Peluquería',
+    appName: 'Multiservicios Peluquería',
     emoji: '💇',
     iconoServicios: Icons.content_cut,
     primaryColor: Color(0xFF6A1B9A),
     primaryLight: Color(0xFFBA68C8),
     primaryDark: Color(0xFF4A148C),
-    saludo: '¡Bienvenida a GestorPro Peluquería! 💇',
+    saludo: '¡Bienvenida a Multiservicios Peluquería! 💇',
     subtitulo: 'Tu asistente personal para gestionar tu negocio de peluquería',
     categoriasProductos: [
       'Tintes',
@@ -169,13 +169,13 @@ const Map<BusinessType, BusinessConfig> kBusinessConfigs = {
   BusinessType.spa: BusinessConfig(
     tipo: BusinessType.spa,
     label: 'Spa / Estética',
-    appName: 'GestorPro Spa',
+    appName: 'Multiservicios Spa',
     emoji: '🧖',
     iconoServicios: Icons.self_improvement,
     primaryColor: Color(0xFF00897B),
     primaryLight: Color(0xFF4DB6AC),
     primaryDark: Color(0xFF00695C),
-    saludo: '¡Bienvenida a GestorPro Spa! 🧖',
+    saludo: '¡Bienvenida a Multiservicios Spa! 🧖',
     subtitulo: 'Tu asistente personal para gestionar tu spa o centro de estética',
     categoriasProductos: [
       'Aceites y esencias',

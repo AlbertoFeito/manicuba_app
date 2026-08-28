@@ -5,8 +5,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/cliente.dart';
-import 'package:gestorpro_app/services/cliente_service.dart';
+import 'package:multiservicios_app/models/cliente.dart';
+import 'package:multiservicios_app/services/cliente_service.dart';
 
 void main() {
   final clientes = ClienteService();

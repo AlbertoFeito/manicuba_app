@@ -11,9 +11,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/post_redes.dart';
-import 'package:gestorpro_app/services/compartir_nativo.dart';
-import 'package:gestorpro_app/services/compartir_service.dart';
+import 'package:multiservicios_app/models/post_redes.dart';
+import 'package:multiservicios_app/services/compartir_nativo.dart';
+import 'package:multiservicios_app/services/compartir_service.dart';
 
 /// Simula el canal nativo sin tocar Android de verdad.
 class _NativoFalso extends CompartirNativo {

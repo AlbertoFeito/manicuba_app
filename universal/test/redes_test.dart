@@ -2,8 +2,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/post_redes.dart';
-import 'package:gestorpro_app/services/redes_service.dart';
+import 'package:multiservicios_app/models/post_redes.dart';
+import 'package:multiservicios_app/services/redes_service.dart';
 
 void main() {
   final redes = RedesService();

@@ -4,8 +4,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/models/producto.dart';
-import 'package:gestorpro_app/screens/inventario/dialogos_stock.dart';
+import 'package:multiservicios_app/models/producto.dart';
+import 'package:multiservicios_app/screens/inventario/dialogos_stock.dart';
 
 Producto producto({int stock = 10, double costo = 0, String? proveedor}) =>
     Producto(

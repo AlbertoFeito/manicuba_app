@@ -2,9 +2,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/gasto.dart';
-import 'package:gestorpro_app/models/ingreso.dart';
-import 'package:gestorpro_app/services/finanzas_service.dart';
+import 'package:multiservicios_app/models/gasto.dart';
+import 'package:multiservicios_app/models/ingreso.dart';
+import 'package:multiservicios_app/services/finanzas_service.dart';
 
 void main() {
   test('El balance del día refleja ingresos menos gastos', () async {

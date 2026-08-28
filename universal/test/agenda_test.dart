@@ -2,12 +2,12 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/cita.dart';
-import 'package:gestorpro_app/models/cliente.dart';
-import 'package:gestorpro_app/models/servicio.dart';
-import 'package:gestorpro_app/services/cita_service.dart';
-import 'package:gestorpro_app/services/cliente_service.dart';
-import 'package:gestorpro_app/services/servicio_service.dart';
+import 'package:multiservicios_app/models/cita.dart';
+import 'package:multiservicios_app/models/cliente.dart';
+import 'package:multiservicios_app/models/servicio.dart';
+import 'package:multiservicios_app/services/cita_service.dart';
+import 'package:multiservicios_app/services/cliente_service.dart';
+import 'package:multiservicios_app/services/servicio_service.dart';
 
 void main() {
   test('Crear una cita la asocia al cliente y aparece por fecha', () async {

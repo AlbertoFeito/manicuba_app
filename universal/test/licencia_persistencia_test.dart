@@ -11,12 +11,12 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/config/business_config.dart';
-import 'package:gestorpro_app/services/licencia_service.dart';
+import 'package:multiservicios_app/config/business_config.dart';
+import 'package:multiservicios_app/services/licencia_service.dart';
 
 // Debe coincidir con el defaultValue de _secret cuando no se compila con
 // --dart-define=LICENSE_SECRET (el caso de los tests).
-const _secretoDev = 'gestorpro-dev-secret';
+const _secretoDev = 'multiservicios-dev-secret';
 
 // AppConfig.instance.current empieza en "manicura" por defecto (ver
 // business_config.dart) hasta que algo llame a setBusinessType.

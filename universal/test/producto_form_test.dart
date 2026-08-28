@@ -10,9 +10,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/producto.dart';
-import 'package:gestorpro_app/screens/inventario/producto_form_screen.dart';
-import 'package:gestorpro_app/services/inventario_service.dart';
+import 'package:multiservicios_app/models/producto.dart';
+import 'package:multiservicios_app/screens/inventario/producto_form_screen.dart';
+import 'package:multiservicios_app/services/inventario_service.dart';
 
 /// Bombea hasta que [buscado] aparezca, sin usar `pumpAndSettle`: mientras
 /// guarda, el botón muestra un indicador de progreso indeterminado que nunca

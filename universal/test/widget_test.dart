@@ -6,9 +6,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/config/business_config.dart';
-import 'package:gestorpro_app/config/theme.dart';
-import 'package:gestorpro_app/main.dart';
+import 'package:multiservicios_app/config/business_config.dart';
+import 'package:multiservicios_app/config/theme.dart';
+import 'package:multiservicios_app/main.dart';
 
 void main() {
   setUp(() {

@@ -2,8 +2,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/config/business_config.dart';
-import 'package:gestorpro_app/services/licencia_service.dart';
+import 'package:multiservicios_app/config/business_config.dart';
+import 'package:multiservicios_app/services/licencia_service.dart';
 
 void main() {
   const secret = 'secreto-de-prueba';

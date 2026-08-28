@@ -3,7 +3,7 @@
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/services/compartir_nativo.dart';
+import 'package:multiservicios_app/services/compartir_nativo.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();

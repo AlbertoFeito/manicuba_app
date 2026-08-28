@@ -5,10 +5,10 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/config/constants.dart';
-import 'package:gestorpro_app/models/producto.dart';
-import 'package:gestorpro_app/services/finanzas_service.dart';
-import 'package:gestorpro_app/services/inventario_service.dart';
+import 'package:multiservicios_app/config/constants.dart';
+import 'package:multiservicios_app/models/producto.dart';
+import 'package:multiservicios_app/services/finanzas_service.dart';
+import 'package:multiservicios_app/services/inventario_service.dart';
 
 /// La base de datos de test se comparte entre archivos, así que cada test
 /// crea su propio producto y mide sobre él, no sobre totales globales.

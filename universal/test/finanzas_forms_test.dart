@@ -7,11 +7,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/models/gasto.dart';
-import 'package:gestorpro_app/models/ingreso.dart';
-import 'package:gestorpro_app/screens/finanzas/gasto_form_screen.dart';
-import 'package:gestorpro_app/screens/finanzas/ingreso_form_screen.dart';
-import 'package:gestorpro_app/services/finanzas_service.dart';
+import 'package:multiservicios_app/models/gasto.dart';
+import 'package:multiservicios_app/models/ingreso.dart';
+import 'package:multiservicios_app/screens/finanzas/gasto_form_screen.dart';
+import 'package:multiservicios_app/screens/finanzas/ingreso_form_screen.dart';
+import 'package:multiservicios_app/services/finanzas_service.dart';
 
 Future<void> bombearHasta(WidgetTester tester, Finder buscado) async {
   for (var i = 0; i < 30 && buscado.evaluate().isEmpty; i++) {

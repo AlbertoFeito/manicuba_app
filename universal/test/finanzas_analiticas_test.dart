@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/models/gasto.dart';
-import 'package:gestorpro_app/models/ingreso.dart';
-import 'package:gestorpro_app/screens/finanzas/finanzas_screen.dart';
-import 'package:gestorpro_app/services/finanzas_service.dart';
+import 'package:multiservicios_app/models/gasto.dart';
+import 'package:multiservicios_app/models/ingreso.dart';
+import 'package:multiservicios_app/screens/finanzas/finanzas_screen.dart';
+import 'package:multiservicios_app/services/finanzas_service.dart';
 
 void main() {
   testWidgets('La vista Analíticas muestra los KPIs y la comparación',

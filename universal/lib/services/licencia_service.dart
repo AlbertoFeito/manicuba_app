@@ -41,10 +41,10 @@ class LicenciaService {
   /// firmado (ver [computeLicence]), no el secreto.
   static const String _secret = String.fromEnvironment(
     'LICENSE_SECRET',
-    defaultValue: 'gestorpro-dev-secret',
+    defaultValue: 'multiservicios-dev-secret',
   );
 
-  bool get usandoSecretoDev => _secret == 'gestorpro-dev-secret';
+  bool get usandoSecretoDev => _secret == 'multiservicios-dev-secret';
 
   SharedPreferences? _prefs;
   Future<SharedPreferences> get _sp async =>

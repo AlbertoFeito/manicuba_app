@@ -12,9 +12,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestorpro_app/models/cliente.dart';
-import 'package:gestorpro_app/services/backup_service.dart';
-import 'package:gestorpro_app/services/cliente_service.dart';
+import 'package:multiservicios_app/models/cliente.dart';
+import 'package:multiservicios_app/services/backup_service.dart';
+import 'package:multiservicios_app/services/cliente_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'support/fake_path_provider.dart';

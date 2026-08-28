@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gestorpro_app/screens/servicios/servicio_form_screen.dart';
+import 'package:multiservicios_app/screens/servicios/servicio_form_screen.dart';
 
 void main() {
   testWidgets('El formulario de servicio exige nombre, precio y duración',
