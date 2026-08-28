@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 
 /// Rubros de negocio soportados por la app. Cada valor tiene su propia
 /// [BusinessConfig] (colores, textos, catálogo sugerido) y su propia
@@ -229,5 +230,14 @@ class AppConfig {
   void setBusinessType(BusinessType tipo) {
     _current = kBusinessConfigs[tipo]!;
     _cargado = true;
+  }
+
+  /// Vuelve al estado de "instalación nueva, sin rubro elegido". Solo para
+  /// tests: en la app real este singleton vive mientras el proceso está
+  /// vivo, nunca hace falta "deselegir" un rubro ya elegido.
+  @visibleForTesting
+  void reset() {
+    _current = kBusinessConfigs[BusinessType.manicura]!;
+    _cargado = false;
   }
 }
