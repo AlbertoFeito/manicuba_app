@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:multiservicios_app/config/business_config.dart';
 import 'package:multiservicios_app/models/cliente.dart';
 import 'package:multiservicios_app/services/backup_service.dart';
 import 'package:multiservicios_app/services/cliente_service.dart';
@@ -19,12 +20,19 @@ import 'package:path_provider/path_provider.dart';
 
 import 'support/fake_path_provider.dart';
 
+// Prefijo real de los nombres de archivo de backup para "Manicura" (rubro
+// fijado en cada test): listBackups() solo muestra los del rubro activo,
+// así que los archivos de prueba deben empezar igual que los que generaría
+// la app de verdad (ver BackupService._backupFilename/_slugify).
+const _prefijo = 'multiservicios-manicura';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late FakePathProvider fake;
 
   setUp(() {
+    AppConfig.instance.setBusinessType(BusinessType.manicura);
     fake = FakePathProvider.install();
   });
   tearDown(() => fake.dispose());
@@ -44,18 +52,24 @@ void main() {
     expect(await BackupService.listBackups(), isEmpty);
 
     final dir = await backupDir();
-    final viejo = File('${dir.path}/viejo.json')..writeAsStringSync('{}');
-    final nuevo = File('${dir.path}/nuevo.json')..writeAsStringSync('{}');
+    final viejo = File('${dir.path}/$_prefijo-viejo.json')
+      ..writeAsStringSync('{}');
+    final nuevo = File('${dir.path}/$_prefijo-nuevo.json')
+      ..writeAsStringSync('{}');
     // Un no-json que debe ignorarse.
     File('${dir.path}/notas.txt').writeAsStringSync('hola');
+    // Un backup de OTRO rubro: no debe aparecer con Manicura activo.
+    File('${dir.path}/multiservicios-spa-ajeno.json').writeAsStringSync('{}');
 
     viejo.setLastModifiedSync(DateTime(2024, 1, 1));
     nuevo.setLastModifiedSync(DateTime(2025, 1, 1));
 
     final backups = await BackupService.listBackups();
     final nombres = backups.map((b) => b.name).toList();
-    expect(nombres, ['nuevo.json', 'viejo.json']); // más reciente primero
+    expect(nombres,
+        ['$_prefijo-nuevo.json', '$_prefijo-viejo.json']); // más reciente primero
     expect(nombres.contains('notas.txt'), isFalse);
+    expect(nombres.contains('multiservicios-spa-ajeno.json'), isFalse);
   });
 
   test('readBackupContent decodifica el JSON del archivo', () async {
@@ -97,9 +111,11 @@ void main() {
     final marca = 'BK-${DateTime.now().microsecondsSinceEpoch}';
     await clientes.crearCliente(Cliente(nombre: marca, telefono: '55500000'));
 
-    // Snapshot completo a un archivo fuera de la carpeta de backups.
+    // Snapshot completo a un archivo fuera de la carpeta de backups. El
+    // nombre lleva el prefijo del rubro activo porque exportData() incluye
+    // "businessType" en el JSON y listBackups() filtra por rubro.
     final json = await BackupService.exportData();
-    final origen = File('${fake.root.path}/restore-$marca.json')
+    final origen = File('${fake.root.path}/$_prefijo-restore-$marca.json')
       ..writeAsStringSync(json);
 
     await BackupService.importDataFromFile(origen);
@@ -112,7 +128,22 @@ void main() {
     // ...y el archivo quedó copiado en Backups para aparecer en la lista.
     final enLista =
         (await BackupService.listBackups()).map((b) => b.name).toList();
-    expect(enLista.contains('restore-$marca.json'), isTrue);
+    expect(enLista.contains('$_prefijo-restore-$marca.json'), isTrue);
+  });
+
+  test('importDataFromFile rechaza un backup de otro rubro', () async {
+    // Con Manicura activo, un JSON marcado como "spa" no debe importarse:
+    // mezclaría los datos de un rubro con los del otro.
+    final data = jsonDecode(await BackupService.exportData())
+        as Map<String, dynamic>;
+    data['businessType'] = 'spa';
+    final origen = File('${fake.root.path}/de-otro-rubro.json')
+      ..writeAsStringSync(jsonEncode(data));
+
+    await expectLater(
+      BackupService.importDataFromFile(origen),
+      throwsA(isA<Exception>()),
+    );
   });
 
   test('createBackupFile en no-móvil devuelve null (y arma el nombre)',

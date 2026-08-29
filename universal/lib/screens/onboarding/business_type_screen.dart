@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../config/business_config.dart';
 import '../../config/theme.dart';
+import '../../database/database_helper.dart';
 import '../../main.dart';
 import '../../services/licencia_service.dart';
 
@@ -14,10 +15,12 @@ import '../../services/licencia_service.dart';
 ///
 /// En ambos casos, la elección define colores, textos y catálogo de
 /// servicios sugerido para el resto de la app, y qué licencia/prueba aplica
-/// (cada rubro tiene la suya, ver [LicenciaService]). Cambiar de rubro no
-/// borra clientes, citas ni finanzas existentes — son compartidos por toda
-/// la app — pero si el rubro elegido no tiene licencia activa todavía,
-/// arranca su propia prueba de 15 días.
+/// (cada rubro tiene la suya, ver [LicenciaService]). Cada rubro tiene
+/// además su propia base de datos (ver [DatabaseHelper.dbName]): clientes,
+/// citas, servicios y finanzas de "Manicura" son completamente
+/// independientes de los de "Spa", como si fueran negocios separados. Si el
+/// rubro elegido no tiene licencia activa todavía, arranca su propia prueba
+/// de 15 días.
 class BusinessTypeScreen extends StatefulWidget {
   const BusinessTypeScreen({super.key, this.esCambio = false});
 
@@ -40,6 +43,12 @@ class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
     }
 
     setState(() => _guardando = true);
+
+    // Cierra la conexión a la base del rubro anterior (si había una
+    // abierta): dbName depende del rubro activo, así que sin esto la app
+    // seguiría leyendo/escribiendo en la base vieja hasta reiniciar el
+    // proceso de verdad.
+    await DatabaseHelper().closeConnection();
 
     final config = kBusinessConfigs[tipo]!;
     AppConfig.instance.setBusinessType(tipo);

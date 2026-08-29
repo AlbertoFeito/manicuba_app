@@ -60,6 +60,9 @@ class BackupService {
     final data = {
       'exportDate': DateTime.now().toIso8601String(),
       'dbVersion': DatabaseHelper.dbVersion,
+      // Cada rubro tiene su propia base de datos; se guarda para que
+      // importDataFromFile() pueda avisar si el archivo es de otro rubro.
+      'businessType': AppConfig.instance.current.tipo.name,
       'clientes': await db.query('clientes'),
       'citas': await db.query('citas'),
       'productos': await db.query('productos'),
@@ -209,12 +212,18 @@ class BackupService {
 
       final backupDir = await _getBackupDirectory();
       final files = backupDir.listSync().whereType<File>().toList();
+      final prefijo = _slugify(AppConfig.instance.current.appName);
 
-      // Verificar si existe un backup de hoy
+      // Verificar si existe un backup de hoy PARA ESTE RUBRO (el nombre de
+      // archivo ya lo distingue de los de otros rubros que comparten la
+      // misma carpeta de backups).
       final today = DateTime.now();
       final todayStr = '${today.year}-${_pad(today.month)}-${_pad(today.day)}';
 
-      final existsBackupToday = files.any((file) => file.path.contains(todayStr));
+      final existsBackupToday = files.any((file) {
+        final nombre = file.path.split('/').last;
+        return nombre.startsWith('$prefijo-') && nombre.contains(todayStr);
+      });
 
       if (!existsBackupToday) {
         await createBackupFile();
@@ -235,19 +244,24 @@ class BackupService {
     return backupDir;
   }
 
-  /// Lista todos los archivos de backup disponibles, ordenados por fecha (más recientes primero).
+  /// Lista los backups del rubro activo, ordenados por fecha (más recientes
+  /// primero). No muestra backups de otros rubros: como cada uno tiene su
+  /// propia base de datos, mezclarlos en esta lista invitaría a restaurar
+  /// por error el de un rubro distinto encima del activo.
   static Future<List<BackupFile>> listBackups() async {
     try {
       final backupDir = await _getBackupDirectory();
       final files = backupDir.listSync().whereType<File>().toList();
+      final prefijo = _slugify(AppConfig.instance.current.appName);
 
       final backups = <BackupFile>[];
       for (final file in files) {
-        if (file.path.endsWith('.json')) {
+        final nombre = file.path.split('/').last;
+        if (nombre.endsWith('.json') && nombre.startsWith('$prefijo-')) {
           final stat = await file.stat();
           final createdAt = stat.modified;
           backups.add(BackupFile(
-            name: file.path.split('/').last,
+            name: nombre,
             file: file,
             createdAt: createdAt,
             sizeBytes: stat.size,
@@ -323,6 +337,21 @@ class BackupService {
         throw Exception(
           'El archivo no es un backup válido de esta app. '
           'Verifica que sea un archivo JSON generado por la app.',
+        );
+      }
+
+      // Cada rubro tiene su propia base de datos: un backup de otro rubro
+      // (p. ej. "spa" elegido desde el selector de archivos con "manicura"
+      // activo) no debe mezclarse con los datos actuales. Los backups sin
+      // este campo (formato anterior a la app multi-rubro) se aceptan tal
+      // cual, sin poder verificar su origen.
+      final rubroBackup = data['businessType'] as String?;
+      final rubroActivo = AppConfig.instance.current.tipo.name;
+      if (rubroBackup != null && rubroBackup != rubroActivo) {
+        throw Exception(
+          'Este backup es de otro rubro ("$rubroBackup"), y ahora mismo '
+          'tienes activo "$rubroActivo". Cambia al rubro "$rubroBackup" '
+          'desde el menú antes de restaurarlo, para no mezclar sus datos.',
         );
       }
 

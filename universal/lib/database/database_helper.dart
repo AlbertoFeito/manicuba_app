@@ -4,7 +4,10 @@ import 'package:path/path.dart';
 import '../config/business_config.dart';
 
 class DatabaseHelper {
-  static const String dbName = 'app.db';
+  /// Cada rubro tiene su propio archivo de base de datos: clientes, citas,
+  /// servicios y finanzas de "Manicura" son independientes de los de "Spa",
+  /// aunque sea el mismo dispositivo y la misma app instalada.
+  static String get dbName => 'app_${AppConfig.instance.current.tipo.name}.db';
   static const int dbVersion = 2;
 
   static Database? _db;
@@ -703,6 +706,19 @@ class DatabaseHelper {
   }
 
   // UTILIDADES
+
+  /// Cierra la conexión abierta (si la hay), sin borrar el archivo. Hace
+  /// falta llamarlo al cambiar de rubro (ver `BusinessTypeScreen`): como
+  /// [dbName] depende del rubro activo, sin esto la próxima consulta
+  /// seguiría usando la conexión ya abierta de la base del rubro anterior
+  /// en vez de abrir la del rubro nuevo.
+  Future<void> closeConnection() async {
+    if (_db != null) {
+      await _db!.close();
+      _db = null;
+    }
+  }
+
   Future<void> close() async {
     final db = await database;
     db.close();

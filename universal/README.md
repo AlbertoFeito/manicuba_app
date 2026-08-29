@@ -22,7 +22,31 @@ que antes eran específicos de cada app.
   En arranques siguientes, `main.dart` carga el rubro guardado antes de
   `runApp()`.
 - El resto de la app (agenda, clientes, finanzas, inventario, backup) es
-  100% compartido y no depende del rubro.
+  100% compartido a nivel de código y no depende del rubro — pero cada
+  rubro guarda sus datos en su propia base de datos (ver siguiente
+  sección), así que en la práctica son negocios completamente separados.
+- Desde el menú de Inicio ("⋮" → "Cambiar tipo de negocio") se puede
+  volver a `BusinessTypeScreen` (con `esCambio: true`) para cambiar de
+  rubro después del onboarding. `main.dart` expone un `Restarter` que
+  reconstruye toda la app en caliente al aplicar el cambio, sin reiniciar
+  el proceso.
+
+## Datos independientes por rubro
+
+Clientes, citas, servicios, finanzas e inventario de "Manicura" son
+completamente independientes de los de "Spa", como si fueran negocios
+separados — no solo la licencia. Esto se implementa en
+`lib/database/database_helper.dart`: `dbName` es un getter que depende del
+rubro activo (`app_<rubro>.db`), así que cada rubro abre su propio archivo
+SQLite. Al cambiar de rubro, `BusinessTypeScreen` cierra la conexión
+abierta (`DatabaseHelper().closeConnection()`) antes de reiniciar la app,
+para que la próxima consulta abra la base correcta.
+
+Los backups siguen la misma separación: `BackupService.listBackups()` solo
+muestra los del rubro activo, `maybeAutoBackup()` solo cuenta los backups
+de hoy de ese rubro, y restaurar un archivo de otro rubro con el selector
+de archivos se rechaza con un aviso (el JSON exportado incluye
+`businessType` para poder detectarlo).
 
 ## Licenciamiento: por rubro, no por dispositivo
 
@@ -51,8 +75,6 @@ Necesita su propia keystore de producción (`android/key.properties` +
 
 - Ícono definitivo (hoy usa el ícono de ManiCuba como placeholder; el nombre
   "Multiservicios" ya es definitivo).
-- Decidir si se agrega una pantalla de ajustes para cambiar de rubro después
-  del onboarding (hoy solo se elige una vez, al primer arranque).
 
 ## Releases
 

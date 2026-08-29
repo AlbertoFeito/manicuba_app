@@ -29,7 +29,9 @@ import 'package:multiservicios_app/config/business_config.dart';
 import 'package:multiservicios_app/config/theme.dart';
 import 'package:multiservicios_app/database/database_helper.dart';
 import 'package:multiservicios_app/main.dart';
+import 'package:multiservicios_app/models/cliente.dart';
 import 'package:multiservicios_app/screens/servicios/servicios_screen.dart';
+import 'package:multiservicios_app/services/cliente_service.dart';
 
 const _paso = Duration(milliseconds: 100);
 
@@ -39,6 +41,20 @@ Future<void> _bombearHasta(WidgetTester tester, Finder buscado,
     await Future<void>.delayed(_paso);
     await tester.pump();
   }
+}
+
+/// Borra la base de datos de CADA rubro (cada uno tiene su propio archivo,
+/// ver DatabaseHelper.dbName) y deja AppConfig reiniciado a "sin rubro
+/// elegido". Hace falta recorrer los tres explícitamente: borrar solo la
+/// del rubro activo en un momento dado dejaría rastros de los otros de una
+/// corrida anterior de este mismo archivo de test.
+Future<void> _borrarBasesDeTodosLosRubros() async {
+  for (final t in BusinessType.values) {
+    AppConfig.instance.setBusinessType(t);
+    await DatabaseHelper().closeConnection();
+    await DatabaseHelper().deleteDatabase();
+  }
+  AppConfig.instance.reset();
 }
 
 void main() {
@@ -69,10 +85,10 @@ void main() {
       await tester.runAsync(() async {
         // Instalación nueva: sin rubro elegido (el singleton AppConfig vive
         // todo el proceso de test, hay que reiniciarlo a mano), sin
-        // preferencia guardada y sin base de datos previa.
-        AppConfig.instance.reset();
+        // preferencia guardada y sin base de datos previa de NINGÚN rubro
+        // (cada uno tiene su propio archivo).
         SharedPreferences.setMockInitialValues({});
-        await DatabaseHelper().deleteDatabase();
+        await _borrarBasesDeTodosLosRubros();
 
         await tester.pumpWidget(const Restarter(child: MyApp()));
         await _bombearHasta(tester, find.text('¿A qué te dedicas?'));
@@ -108,8 +124,10 @@ void main() {
         'Con "${config.label}" activo, Servicios muestra su catálogo '
         'semilla y no el de otro rubro', (tester) async {
       await tester.runAsync(() async {
+        await _borrarBasesDeTodosLosRubros();
         AppConfig.instance.setBusinessType(tipo);
         AppTheme.aplicarConfig(config);
+        await DatabaseHelper().closeConnection();
         await DatabaseHelper().deleteDatabase();
 
         await tester.pumpWidget(MaterialApp(home: ServiciosScreen()));
@@ -134,4 +152,28 @@ void main() {
       });
     });
   }
+
+  test('un cliente creado en un rubro no aparece al cambiar a otro', () async {
+    await _borrarBasesDeTodosLosRubros();
+
+    AppConfig.instance.setBusinessType(BusinessType.manicura);
+    await ClienteService().crearCliente(
+      Cliente(nombre: 'Clienta de Manicura', telefono: '555-0001'),
+    );
+    final clientesManicura = await ClienteService().obtenerTodos();
+    expect(clientesManicura.length, 1);
+
+    // Cambiar de rubro cierra la conexión abierta, igual que hace
+    // BusinessTypeScreen antes de reiniciar la app.
+    await DatabaseHelper().closeConnection();
+    AppConfig.instance.setBusinessType(BusinessType.spa);
+
+    final clientesSpa = await ClienteService().obtenerTodos();
+    expect(clientesSpa, isEmpty,
+        reason: 'Spa no debería ver clientes creados en Manicura: cada '
+            'rubro tiene su propia base de datos');
+
+    await DatabaseHelper().closeConnection();
+    await _borrarBasesDeTodosLosRubros();
+  });
 }
