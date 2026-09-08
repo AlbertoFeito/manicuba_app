@@ -5,6 +5,7 @@ import '../config/theme.dart';
 import 'agenda/agenda_screen.dart';
 import 'agenda/cita_form_screen.dart';
 import 'agenda/historial_screen.dart';
+import 'asistente/asistente_screen.dart';
 import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
 import 'finanzas/finanzas_screen.dart';
@@ -167,7 +168,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.more_vert),
             tooltip: 'Más',
             onSelected: (value) {
-              if (value == 'servicios') {
+              if (value == 'asistente') {
+                _abrirAsistente();
+              } else if (value == 'servicios') {
                 _abrirServicios();
               } else if (value == 'inventario') {
                 _abrirInventario();
@@ -186,6 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'asistente',
+                child: ListTile(
+                  leading: Icon(Icons.campaign),
+                  title: Text('Asistente de promociones'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const PopupMenuItem(
                 value: 'historial',
                 child: ListTile(
@@ -423,6 +434,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: 'Post Redes',
                   onTap: _nuevoPost,
                 ),
+                _buildActionButton(
+                  icon: Icons.campaign,
+                  label: 'Promociones',
+                  onTap: _abrirAsistente,
+                ),
               ],
             ),
 
@@ -593,6 +609,14 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => const GaleriaScreen(),
+      ),
+    );
+  }
+
+  Future<void> _abrirAsistente() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const AsistenteScreen(),
       ),
     );
   }

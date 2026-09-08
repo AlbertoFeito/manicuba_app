@@ -13,9 +13,15 @@ import '../../services/redes_service.dart';
 /// Formulario para crear o editar un post de redes sociales con ayudas de
 /// emojis y hashtags sugeridos.
 class PostFormScreen extends StatefulWidget {
-  const PostFormScreen({super.key, this.post});
+  const PostFormScreen({super.key, this.post, this.plantilla});
 
+  /// Post existente a editar. Si es null, el formulario crea uno nuevo.
   final PostRedes? post;
+
+  /// Borrador con el que precargar el formulario al crear un post nuevo (p.
+  /// ej. una sugerencia del Asistente de Promociones). No es una edición: al
+  /// guardar se crea un post nuevo. Se ignora si [post] no es null.
+  final PostRedes? plantilla;
 
   @override
   State<PostFormScreen> createState() => _PostFormScreenState();
@@ -43,7 +49,8 @@ class _PostFormScreenState extends State<PostFormScreen> {
   @override
   void initState() {
     super.initState();
-    final p = widget.post;
+    // Al editar se usa el post; al crear, el borrador (plantilla) si viene.
+    final p = widget.post ?? widget.plantilla;
     _tituloCtrl.text = p?.titulo ?? '';
     _contenidoCtrl.text = p?.contenido ?? '';
     _emojisCtrl.text = p?.emojis ?? '';
