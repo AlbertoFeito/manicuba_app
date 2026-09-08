@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../../models/sugerencia_promo.dart';
 import '../../services/asistente_service.dart';
 import '../../services/difusion_service.dart';
+import '../../services/redes_service.dart';
 import '../difusion/difusion_screen.dart';
 import '../redes_sociales/post_form_screen.dart';
 
@@ -21,9 +22,11 @@ class AsistenteScreen extends StatefulWidget {
 
 class _AsistenteScreenState extends State<AsistenteScreen> {
   final _asistente = AsistenteService();
+  final _redes = RedesService();
 
   bool _cargando = true;
   List<SugerenciaPromo> _sugerencias = [];
+  Map<String, int> _stats = const {};
 
   // Sugerencias descartadas en esta sesión (por id), para no volver a
   // mostrarlas tras recargar.
@@ -38,12 +41,14 @@ class _AsistenteScreenState extends State<AsistenteScreen> {
   Future<void> _cargar() async {
     setState(() => _cargando = true);
     final todas = await _asistente.generarSugerencias();
+    final stats = await _redes.estadisticasPromocion();
     if (!mounted) {
       return;
     }
     setState(() {
       _sugerencias =
           todas.where((s) => !_descartadas.contains(s.id)).toList();
+      _stats = stats;
       _cargando = false;
     });
   }
@@ -96,37 +101,66 @@ class _AsistenteScreenState extends State<AsistenteScreen> {
       ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
-          : _sugerencias.isEmpty
-              ? _vacio()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _sugerencias.length,
-                  itemBuilder: (_, i) => _tarjeta(_sugerencias[i]),
-                ),
+          : ListView(
+              padding: const EdgeInsets.all(12),
+              children: [
+                _resumen(),
+                const SizedBox(height: 8),
+                if (_sugerencias.isEmpty)
+                  _vacio()
+                else
+                  ..._sugerencias.map(_tarjeta),
+              ],
+            ),
+    );
+  }
+
+  Widget _resumen() {
+    final posts = _stats['posts_creados'] ?? 0;
+    final ofertas = _stats['ofertas_promocionadas'] ?? 0;
+    final compartidas = _stats['fotos_compartidas'] ?? 0;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _stat('$posts', 'Posts'),
+            _stat('$ofertas', 'Ofertas'),
+            _stat('$compartidas', 'Fotos'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _stat(String valor, String etiqueta) {
+    return Column(
+      children: [
+        Text(valor, style: Theme.of(context).textTheme.titleLarge),
+        Text(etiqueta, style: Theme.of(context).textTheme.bodySmall),
+      ],
     );
   }
 
   Widget _vacio() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '¡Todo al día!',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'No hay sugerencias de promoción por ahora. '
-              'Vuelve más tarde o crea un post desde la pestaña de Redes.',
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            '¡Todo al día!',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'No hay sugerencias de promoción por ahora. '
+            'Vuelve más tarde o crea un post desde la pestaña de Redes.',
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

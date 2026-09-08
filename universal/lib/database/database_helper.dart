@@ -705,6 +705,80 @@ class DatabaseHelper {
     return await db.delete('fotos_trabajo', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ESTADÍSTICAS DE REDES
+  //
+  // Una fila por día (clave: fecha en formato yyyy-MM-dd). Los contadores se
+  // acumulan con incrementos idempotentes por operación.
+
+  static String _claveDia(DateTime fecha) =>
+      '${fecha.year.toString().padLeft(4, '0')}-'
+      '${fecha.month.toString().padLeft(2, '0')}-'
+      '${fecha.day.toString().padLeft(2, '0')}';
+
+  /// Suma los deltas indicados a la fila del día [fecha] (hoy por defecto),
+  /// creándola si no existe.
+  Future<void> incrementarEstadisticaRedes({
+    int postsCreados = 0,
+    int fotosCompartidas = 0,
+    int ofertasPromocionadas = 0,
+    int clientesNuevos = 0,
+    DateTime? fecha,
+  }) async {
+    final db = await database;
+    final dia = _claveDia(fecha ?? DateTime.now());
+    final filas = await db.query(
+      'estadisticas_redes',
+      where: 'fecha = ?',
+      whereArgs: [dia],
+      limit: 1,
+    );
+    if (filas.isEmpty) {
+      await db.insert('estadisticas_redes', {
+        'fecha': dia,
+        'posts_creados': postsCreados,
+        'fotos_compartidas': fotosCompartidas,
+        'ofertas_promocionadas': ofertasPromocionadas,
+        'clientes_nuevos': clientesNuevos,
+      });
+      return;
+    }
+    final actual = filas.first;
+    int suma(String col, int delta) =>
+        ((actual[col] as int?) ?? 0) + delta;
+    await db.update(
+      'estadisticas_redes',
+      {
+        'posts_creados': suma('posts_creados', postsCreados),
+        'fotos_compartidas': suma('fotos_compartidas', fotosCompartidas),
+        'ofertas_promocionadas':
+            suma('ofertas_promocionadas', ofertasPromocionadas),
+        'clientes_nuevos': suma('clientes_nuevos', clientesNuevos),
+      },
+      where: 'fecha = ?',
+      whereArgs: [dia],
+    );
+  }
+
+  /// Totales acumulados de todas las filas de `estadisticas_redes`.
+  Future<Map<String, int>> obtenerEstadisticasRedesTotales() async {
+    final db = await database;
+    final filas = await db.rawQuery('''
+      SELECT
+        COALESCE(SUM(posts_creados), 0) AS posts_creados,
+        COALESCE(SUM(fotos_compartidas), 0) AS fotos_compartidas,
+        COALESCE(SUM(ofertas_promocionadas), 0) AS ofertas_promocionadas,
+        COALESCE(SUM(clientes_nuevos), 0) AS clientes_nuevos
+      FROM estadisticas_redes
+    ''');
+    final row = filas.first;
+    return {
+      'posts_creados': (row['posts_creados'] as int?) ?? 0,
+      'fotos_compartidas': (row['fotos_compartidas'] as int?) ?? 0,
+      'ofertas_promocionadas': (row['ofertas_promocionadas'] as int?) ?? 0,
+      'clientes_nuevos': (row['clientes_nuevos'] as int?) ?? 0,
+    };
+  }
+
   // UTILIDADES
 
   /// Cierra la conexión abierta (si la hay), sin borrar el archivo. Hace
