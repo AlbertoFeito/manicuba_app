@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/sugerencia_promo.dart';
 import '../../services/asistente_service.dart';
+import '../../services/difusion_service.dart';
+import '../difusion/difusion_screen.dart';
 import '../redes_sociales/post_form_screen.dart';
 
 class AsistenteScreen extends StatefulWidget {
@@ -59,6 +61,17 @@ class _AsistenteScreenState extends State<AsistenteScreen> {
         _sugerencias = _sugerencias.where((x) => x.id != s.id).toList();
       });
     }
+  }
+
+  Future<void> _difundir(SugerenciaPromo s) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => DifusionScreen(
+          mensaje: s.borrador.getContenidoFormateado(),
+          filtroInicial: FiltroClientas.inactivas,
+        ),
+      ),
+    );
   }
 
   void _descartar(SugerenciaPromo s) {
@@ -149,14 +162,20 @@ class _AsistenteScreenState extends State<AsistenteScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
               children: [
                 TextButton(
                   onPressed: () => _descartar(s),
                   child: const Text('Descartar'),
                 ),
-                const SizedBox(width: 8),
+                if (s.clienteIds.isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: () => _difundir(s),
+                    icon: const Icon(Icons.send),
+                    label: const Text('Enviar a clientas'),
+                  ),
                 FilledButton.icon(
                   onPressed: () => _crearDesde(s),
                   icon: const Icon(Icons.edit),
