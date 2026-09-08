@@ -11,3 +11,9 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Excepción deliberada para Multiservicios: la keystore de release y
+# key.properties SÍ se versionan en este proyecto (decisión explícita del
+# dueño de la app, tras perder la keystore anterior por no estar en git).
+!key.properties
+!app/multiservicios-release.jks

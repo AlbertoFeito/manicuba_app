@@ -80,3 +80,10 @@ coverage/
 
 # Secretos de licencia (nunca versionar) — guarda tu copia local a salvo
 SECRETO_PRODUCCION.txt
+
+# Excepción deliberada para Multiservicios: se perdió la keystore/secreto
+# anterior por no estar versionados (reinicio de contenedor efímero), así
+# que esta vez SÍ se versionan a pedido explícito del dueño de la app.
+!/android/key.properties
+!/android/app/multiservicios-release.jks
+!SECRETO_PRODUCCION.txt
