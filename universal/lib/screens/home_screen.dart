@@ -5,6 +5,7 @@ import '../config/theme.dart';
 import 'agenda/agenda_screen.dart';
 import 'agenda/cita_form_screen.dart';
 import 'agenda/historial_screen.dart';
+import 'asistente/asistente_screen.dart';
 import 'clientes/clientes_screen.dart';
 import 'clientes/cliente_form_screen.dart';
 import 'finanzas/finanzas_screen.dart';
@@ -13,6 +14,7 @@ import 'galeria/galeria_screen.dart';
 import 'inventario/inventario_screen.dart';
 import 'licencia/licencia_screen.dart';
 import 'onboarding/business_type_screen.dart';
+import 'perfil/perfil_screen.dart';
 import 'redes_sociales/redes_screen.dart';
 import 'redes_sociales/post_form_screen.dart';
 import 'servicios/servicios_screen.dart';
@@ -166,7 +168,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.more_vert),
             tooltip: 'Más',
             onSelected: (value) {
-              if (value == 'servicios') {
+              if (value == 'asistente') {
+                _abrirAsistente();
+              } else if (value == 'servicios') {
                 _abrirServicios();
               } else if (value == 'inventario') {
                 _abrirInventario();
@@ -174,6 +178,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _abrirGaleria();
               } else if (value == 'historial') {
                 _abrirHistorial();
+              } else if (value == 'perfil') {
+                _abrirPerfil();
               } else if (value == 'backup') {
                 _abrirBackup();
               } else if (value == 'licencia') {
@@ -183,6 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'asistente',
+                child: ListTile(
+                  leading: Icon(Icons.campaign),
+                  title: Text('Asistente de promociones'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const PopupMenuItem(
                 value: 'historial',
                 child: ListTile(
@@ -212,6 +226,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListTile(
                   leading: Icon(Icons.photo_library),
                   title: Text('Galería de trabajos'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'perfil',
+                child: ListTile(
+                  leading: Icon(Icons.badge),
+                  title: Text('Perfil del negocio'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -412,6 +434,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: 'Post Redes',
                   onTap: _nuevoPost,
                 ),
+                _buildActionButton(
+                  icon: Icons.campaign,
+                  label: 'Promociones',
+                  onTap: _abrirAsistente,
+                ),
               ],
             ),
 
@@ -582,6 +609,22 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => const GaleriaScreen(),
+      ),
+    );
+  }
+
+  Future<void> _abrirAsistente() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => const AsistenteScreen(),
+      ),
+    );
+  }
+
+  Future<void> _abrirPerfil() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const PerfilScreen(),
       ),
     );
   }

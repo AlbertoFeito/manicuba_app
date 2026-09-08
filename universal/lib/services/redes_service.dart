@@ -7,7 +7,20 @@ class RedesService {
 
   // Crear post
   Future<int> crearPost(PostRedes post) async {
-    return await _db.insertPostRedes(post.toMap());
+    final id = await _db.insertPostRedes(post.toMap());
+    // Analítica de promociones: cuenta el post creado y, si es una
+    // oferta/promoción, también como promoción impulsada.
+    final esOferta = post.tipo == 'oferta' || post.tipo == 'promocion';
+    await _db.incrementarEstadisticaRedes(
+      postsCreados: 1,
+      ofertasPromocionadas: esOferta ? 1 : 0,
+    );
+    return id;
+  }
+
+  // Totales acumulados para el resumen del Asistente de Promociones.
+  Future<Map<String, int>> estadisticasPromocion() async {
+    return _db.obtenerEstadisticasRedesTotales();
   }
 
   // Obtener todos los posts
@@ -48,6 +61,12 @@ class RedesService {
   Future<int> marcarPublicado(int id) async {
     final posts = await obtenerTodos();
     final post = posts.firstWhere((p) => p.id == id);
+    // Solo cuenta como "compartido" la primera vez que se publica.
+    if (!post.publicado) {
+      await _db.incrementarEstadisticaRedes(
+        fotosCompartidas: post.listaFotoIds.length,
+      );
+    }
     final postActualizado = post.copyWith(publicado: true);
     return await actualizar(postActualizado);
   }

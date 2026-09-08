@@ -8,14 +8,22 @@ import 'config/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/licencia/licencia_gate.dart';
 import 'screens/onboarding/business_type_screen.dart';
-import 'services/licencia_service.dart';
 import 'services/backup_service.dart';
+import 'services/licencia_service.dart';
+import 'services/notificaciones_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Carga los datos de formato de fecha en español (meses, días).
   await initializeDateFormatting('es_ES', null);
   await _cargarRubroGuardado();
+  // Prepara las notificaciones locales (recordatorios de publicación). Es
+  // best-effort: si el sistema no las soporta, la app funciona igual.
+  try {
+    await NotificacionesService.instance.init();
+  } catch (_) {
+    // Sin notificaciones: no es crítico para el resto de la app.
+  }
   runApp(const Restarter(child: MyApp()));
 }
 
