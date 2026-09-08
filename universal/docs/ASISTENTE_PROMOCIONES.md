@@ -70,3 +70,16 @@ Baseline de tests en el momento de arrancar: **212 tests en verde** (`flutter te
 
 Cada archivo nuevo lleva un comentario de cabecera indicando que pertenece al Asistente de
 Promociones.
+
+## Notas de implementación
+
+- **Notificaciones**: se usa programación *inexacta*
+  (`AndroidScheduleMode.inexactAllowWhileIdle`), así no se requiere el permiso de alarma exacta;
+  sí se declara `POST_NOTIFICATIONS` (Android 13+) y `RECEIVE_BOOT_COMPLETED`. El plugin
+  `flutter_local_notifications` obliga a habilitar *core library desugaring* en
+  `android/app/build.gradle`.
+- **Programación**: la decisión de qué/cuándo recordar son métodos estáticos puros; la llamada
+  al plugin está tras un *seam* (`programarOverride`) para poder probarla sin el plugin real.
+  El formulario de post permite fijar una fecha/hora opcional de recordatorio.
+- **Clientas frecuentes**: el criterio (≥3 citas completadas) vive en `DifusionService` y no se
+  cambió `ClienteService.obtenerClientesFrecuentes` (para no alterar su contrato ya probado).

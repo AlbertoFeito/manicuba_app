@@ -8,6 +8,7 @@ import '../../config/theme.dart';
 import '../../models/foto_trabajo.dart';
 import '../../models/post_redes.dart';
 import '../../services/foto_service.dart';
+import '../../services/notificaciones_service.dart';
 import '../../services/redes_service.dart';
 
 /// Formulario para crear o editar un post de redes sociales con ayudas de
@@ -44,6 +45,9 @@ class _PostFormScreenState extends State<PostFormScreen> {
   List<int> _fotoIds = [];
   List<FotoTrabajo> _fotosSel = [];
 
+  // Fecha/hora opcional para programar un recordatorio de publicación.
+  DateTime? _fechaProgramada;
+
   bool get _esEdicion => widget.post != null;
 
   @override
@@ -58,6 +62,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
     _tipo = _coincidir(AppConstants.tiposPost, p?.tipo);
     _plataforma = _coincidir(AppConstants.plataformasSociales, p?.plataforma);
     _fotoIds = List.of(p?.listaFotoIds ?? const []);
+    _fechaProgramada = p?.fechaProgramada;
     _cargarFotosSel();
   }
 
@@ -311,17 +316,32 @@ class _PostFormScreenState extends State<PostFormScreen> {
       fotoIds: PostRedes.fotoIdsDesdeLista(_fotoIds),
       plataforma: _plataforma.toLowerCase(),
       fechaCreacion: anterior?.fechaCreacion ?? DateTime.now(),
-      fechaProgramada: anterior?.fechaProgramada,
+      fechaProgramada: _fechaProgramada,
       publicado: anterior?.publicado ?? false,
       visualizaciones: anterior?.visualizaciones ?? 0,
       notas: anterior?.notas,
     );
 
     try {
+      PostRedes guardado = post;
       if (_esEdicion) {
         await _redesService.actualizar(post);
       } else {
-        await _redesService.crearPost(post);
+        final nuevoId = await _redesService.crearPost(post);
+        guardado = post.copyWith(id: nuevoId);
+      }
+      // Programa (o cancela) el recordatorio según la fecha elegida. No debe
+      // impedir guardar si el sistema de notificaciones falla.
+      try {
+        if (_fechaProgramada != null) {
+          await NotificacionesService.instance
+              .programarRecordatorioPost(guardado);
+        } else if (_esEdicion) {
+          await NotificacionesService.instance
+              .cancelarRecordatorioPost(guardado);
+        }
+      } catch (_) {
+        // Silencioso: el post ya se guardó; el recordatorio es un extra.
       }
       if (!mounted) {
         return;
@@ -452,6 +472,8 @@ class _PostFormScreenState extends State<PostFormScreen> {
             const SizedBox(height: 24),
             _buildFotosSection(),
             const SizedBox(height: 24),
+            _buildProgramarSection(),
+            const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _guardando ? null : _guardar,
               icon: _guardando
@@ -466,6 +488,72 @@ class _PostFormScreenState extends State<PostFormScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _elegirFechaProgramada() async {
+    final ahora = DateTime.now();
+    final fecha = await showDatePicker(
+      context: context,
+      initialDate: _fechaProgramada ?? ahora.add(const Duration(days: 1)),
+      firstDate: ahora,
+      lastDate: ahora.add(const Duration(days: 365)),
+    );
+    if (fecha == null || !mounted) {
+      return;
+    }
+    final hora = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        _fechaProgramada ?? ahora.add(const Duration(hours: 1)),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _fechaProgramada = DateTime(
+        fecha.year,
+        fecha.month,
+        fecha.day,
+        hora?.hour ?? 9,
+        hora?.minute ?? 0,
+      );
+    });
+  }
+
+  Widget _buildProgramarSection() {
+    final f = _fechaProgramada;
+    final texto = f == null
+        ? 'Sin recordatorio (opcional)'
+        : 'Recordar el ${f.day}/${f.month}/${f.year} '
+            'a las ${f.hour.toString().padLeft(2, '0')}:'
+            '${f.minute.toString().padLeft(2, '0')}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Programar recordatorio',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.notifications_active),
+          title: Text(texto),
+          trailing: f == null
+              ? TextButton(
+                  onPressed: _elegirFechaProgramada,
+                  child: const Text('Elegir'),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Quitar recordatorio',
+                  onPressed: () => setState(() => _fechaProgramada = null),
+                ),
+          onTap: _elegirFechaProgramada,
+        ),
+      ],
     );
   }
 
