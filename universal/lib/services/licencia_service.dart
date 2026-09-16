@@ -6,16 +6,49 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/business_config.dart';
 
-/// Licencia por dispositivo y por rubro, verificada 100% sin conexión.
+/// Planes comerciales de Multiservicios. El plan contratado determina
+/// cuántos rubros de negocio (de los que existen en [BusinessType]) puede
+/// tener habilitados el mismo dispositivo al mismo tiempo — no cuáles, sino
+/// cuántos: el dueño elige libremente qué rubros usar dentro de ese cupo.
+enum PlanLicencia { basico, pro, premium }
+
+extension PlanLicenciaInfo on PlanLicencia {
+  String get label {
+    switch (this) {
+      case PlanLicencia.basico:
+        return 'Básico';
+      case PlanLicencia.pro:
+        return 'Pro';
+      case PlanLicencia.premium:
+        return 'Premium';
+    }
+  }
+
+  /// Cantidad máxima de rubros que puede tener habilitados a la vez un
+  /// dispositivo con este plan. Premium no tiene límite real: se expresa
+  /// como "todos los rubros que existan hoy".
+  int get maxServicios {
+    switch (this) {
+      case PlanLicencia.basico:
+        return 1;
+      case PlanLicencia.pro:
+        return 2;
+      case PlanLicencia.premium:
+        return BusinessType.values.length;
+    }
+  }
+}
+
+/// Licencia por dispositivo, verificada 100% sin conexión.
 ///
-/// Cada instalación muestra un "código de equipo" (uno solo, compartido por
-/// todos los rubros del dispositivo). El vendedor lo convierte en una
-/// licencia con el generador (que guarda el secreto y el rubro elegido) y se
-/// la envía; la app la comprueba localmente, sin red. Una licencia solo
-/// activa el rubro para el que se generó: activar "Manicura" no da acceso a
-/// "Spa" en el mismo equipo — cada rubro es un producto con su propio pago y
-/// su propia prueba gratuita de 15 días. No pretende resistir que alguien
-/// desempaquete el APK: es fricción contra la copia casual.
+/// Cada instalación muestra un "código de equipo" único. El vendedor lo
+/// convierte en una licencia con el generador (que guarda el secreto y el
+/// plan elegido) y se la envía; la app la comprueba localmente, sin red. Una
+/// sola licencia desbloquea toda la app: lo que varía según el plan
+/// contratado ([PlanLicencia]) es cuántos rubros de negocio puede tener
+/// habilitados el dispositivo a la vez (ver [rubrosHabilitados]). No
+/// pretende resistir que alguien desempaquete el APK: es fricción contra la
+/// copia casual.
 class LicenciaService {
   LicenciaService._();
   static final LicenciaService instance = LicenciaService._();
@@ -27,18 +60,17 @@ class LicenciaService {
   static const int _licenceChars = 16;
 
   static const String _kDeviceId = 'lic_device_id';
-
-  /// El estado de prueba/licencia se guarda por rubro: cada [BusinessType]
-  /// tiene su propia key de `SharedPreferences`.
-  static String _kTrialStart(BusinessType tipo) => 'lic_trial_started_at_${tipo.name}';
-  static String _kLicenseKey(BusinessType tipo) => 'lic_license_key_${tipo.name}';
+  static const String _kTrialStart = 'lic_trial_started_at';
+  static const String _kLicenseKey = 'lic_license_key';
+  static const String _kLicensePlan = 'lic_license_plan';
+  static const String _kRubrosHabilitados = 'lic_rubros_habilitados';
 
   /// Secreto de firma, inyectado al compilar con
   /// `--dart-define=LICENSE_SECRET=...`. El valor por defecto solo permite
-  /// desarrollar; si se publica así, todas las instalaciones comparten códigos
-  /// conocidos. Es un único secreto de compilación para toda la app — lo que
-  /// diferencia una licencia de otra es el rubro incluido en el mensaje
-  /// firmado (ver [computeLicence]), no el secreto.
+  /// desarrollar; si se publica así, todas las instalaciones comparten
+  /// códigos conocidos. Es un único secreto de compilación para toda la
+  /// app — lo que diferencia una licencia de otra es el plan incluido en el
+  /// mensaje firmado (ver [computeLicence]), no el secreto.
   static const String _secret = String.fromEnvironment(
     'LICENSE_SECRET',
     defaultValue: 'multiservicios-dev-secret',
@@ -96,20 +128,21 @@ class LicenciaService {
     return _toBase32(bytes, _deviceChars);
   }
 
-  /// El mensaje firmado incluye el rubro: una licencia generada para
-  /// [BusinessType.manicura] no sirve para activar [BusinessType.spa] en el
-  /// mismo dispositivo, aunque ambas usen el mismo [secret] de compilación.
-  static String computeLicence(String deviceId, String secret, BusinessType tipo) {
+  /// El mensaje firmado incluye el plan: una licencia generada para
+  /// [PlanLicencia.basico] no sirve para activar [PlanLicencia.premium] en
+  /// el mismo dispositivo, aunque ambas usen el mismo [secret] de
+  /// compilación.
+  static String computeLicence(String deviceId, String secret, PlanLicencia plan) {
     final hmac = Hmac(sha256, utf8.encode(secret));
     final digest = hmac.convert(
-      utf8.encode('app:v1:${tipo.name}:${normalizeCode(deviceId)}'),
+      utf8.encode('app:v2:plan:${plan.name}:${normalizeCode(deviceId)}'),
     );
     return _toBase32(digest.bytes, _licenceChars);
   }
 
-  /// Comprueba si [licence] es el código correcto para [deviceId] y [tipo].
-  static bool verifyLicence(String deviceId, String licence, String secret, BusinessType tipo) {
-    final expected = computeLicence(deviceId, secret, tipo);
+  /// Comprueba si [licence] es el código correcto para [deviceId] y [plan].
+  static bool verifyLicence(String deviceId, String licence, String secret, PlanLicencia plan) {
+    final expected = computeLicence(deviceId, secret, plan);
     final given = normalizeCode(licence);
     if (given.length != expected.length) {
       return false;
@@ -123,18 +156,15 @@ class LicenciaService {
 
   // ===== Estado / persistencia =====
 
-  BusinessType get _tipoActivo => AppConfig.instance.current.tipo;
-
-  /// Asegura que exista el código de equipo (global) y la fecha de inicio
-  /// de prueba del rubro activo.
+  /// Asegura que exista el código de equipo y la fecha de inicio de la
+  /// prueba (ambos globales, no dependen del rubro activo).
   Future<void> init() async {
     final sp = await _sp;
     if (sp.getString(_kDeviceId) == null) {
       await sp.setString(_kDeviceId, _newDeviceId());
     }
-    final trialKey = _kTrialStart(_tipoActivo);
-    if (sp.getString(trialKey) == null) {
-      await sp.setString(trialKey, DateTime.now().toIso8601String());
+    if (sp.getString(_kTrialStart) == null) {
+      await sp.setString(_kTrialStart, DateTime.now().toIso8601String());
     }
   }
 
@@ -143,42 +173,106 @@ class LicenciaService {
     return (await _sp).getString(_kDeviceId)!;
   }
 
-  Future<bool> estaLicenciado({BusinessType? tipo}) async {
-    final key = (await _sp).getString(_kLicenseKey(tipo ?? _tipoActivo));
+  Future<bool> estaLicenciado() async {
+    final key = (await _sp).getString(_kLicenseKey);
     return key != null && key.isNotEmpty;
   }
 
-  /// Intenta activar [codigo] para [tipo] (por defecto, el rubro activo); si
-  /// es válido, lo guarda y devuelve true. Un código válido para otro rubro
-  /// no activa este.
-  Future<bool> activar(String codigo, {BusinessType? tipo}) async {
-    final t = tipo ?? _tipoActivo;
-    final id = await deviceId();
-    if (!verifyLicence(id, codigo, _secret, t)) {
-      return false;
+  /// Plan activo, si ya hay una licencia comprada. `null` durante la prueba
+  /// o si la prueba venció sin activar nada.
+  Future<PlanLicencia?> planActivo() async {
+    final nombre = (await _sp).getString(_kLicensePlan);
+    if (nombre == null) return null;
+    for (final p in PlanLicencia.values) {
+      if (p.name == nombre) return p;
     }
-    await (await _sp).setString(_kLicenseKey(t), normalizeCode(codigo));
-    return true;
+    return null;
   }
 
-  /// Estado de licencia/prueba del rubro [tipo] (por defecto, el activo).
-  /// Cada rubro tiene su propio ciclo de prueba de 15 días, independiente
-  /// de si otros rubros ya están licenciados en este mismo dispositivo.
-  Future<LicenciaEstado> estado({BusinessType? tipo, DateTime? ahora}) async {
+  /// Rubros que el dispositivo ya tiene habilitados (ver clase). Vacío en
+  /// una instalación nueva; se va llenando con [habilitarRubro].
+  Future<Set<BusinessType>> rubrosHabilitados() async {
+    final raw = (await _sp).getString(_kRubrosHabilitados);
+    if (raw == null || raw.isEmpty) return {};
+    final nombres = raw.split(',').toSet();
+    return BusinessType.values.where((t) => nombres.contains(t.name)).toSet();
+  }
+
+  Future<void> _guardarHabilitados(Set<BusinessType> rubros) async {
+    await (await _sp).setString(
+      _kRubrosHabilitados,
+      rubros.map((t) => t.name).join(','),
+    );
+  }
+
+  /// Indica si [tipo] puede usarse en este dispositivo: ya habilitado, en
+  /// prueba (acceso libre a todo mientras dura), o si todavía hay cupo
+  /// libre en el plan activo.
+  Future<bool> puedeHabilitar(BusinessType tipo) async {
+    final habilitados = await rubrosHabilitados();
+    if (habilitados.contains(tipo)) return true;
+
+    final est = await estado();
+    if (est.tipo == LicenciaTipo.prueba) return true;
+    if (est.tipo == LicenciaTipo.vencida) return false;
+
+    final plan = await planActivo();
+    if (plan == null) return false;
+    return habilitados.length < plan.maxServicios;
+  }
+
+  /// Marca [tipo] como habilitado en este dispositivo. Llamar solo después
+  /// de confirmar [puedeHabilitar].
+  Future<void> habilitarRubro(BusinessType tipo) async {
+    final habilitados = await rubrosHabilitados();
+    if (habilitados.contains(tipo)) return;
+    await _guardarHabilitados({...habilitados, tipo});
+  }
+
+  /// Intenta activar [codigo] para este dispositivo. El código lleva
+  /// implícito el plan (se prueba contra cada uno); si coincide con
+  /// alguno, se guarda como licencia activa y devuelve true. Si el plan
+  /// comprado tiene menos cupo que rubros ya habilitados (p. ej. se
+  /// probaron los 3 en la prueba gratis y se compra Básico), se conserva
+  /// solo [rubroPreferido] (o el primero que hubiera, si no se indica) y
+  /// se sueltan los demás — sus datos no se borran, solo dejan de ser
+  /// accesibles hasta subir de plan.
+  Future<bool> activar(String codigo, {BusinessType? rubroPreferido}) async {
+    final id = await deviceId();
+    for (final plan in PlanLicencia.values) {
+      if (verifyLicence(id, codigo, _secret, plan)) {
+        final sp = await _sp;
+        await sp.setString(_kLicenseKey, normalizeCode(codigo));
+        await sp.setString(_kLicensePlan, plan.name);
+
+        final habilitados = await rubrosHabilitados();
+        if (habilitados.length > plan.maxServicios) {
+          final conservar = (rubroPreferido != null && habilitados.contains(rubroPreferido))
+              ? rubroPreferido
+              : habilitados.first;
+          await _guardarHabilitados({conservar});
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Estado global de la instalación (prueba/activa/vencida). Ya no depende
+  /// del rubro: una sola licencia cubre todo el dispositivo.
+  Future<LicenciaEstado> estado({DateTime? ahora}) async {
     await init();
-    final t = tipo ?? _tipoActivo;
     final sp = await _sp;
-    final licenciado = await estaLicenciado(tipo: t);
+    final licenciado = await estaLicenciado();
     return calcularEstado(
       licenciado: licenciado,
-      trialStartedAt: sp.getString(_kTrialStart(t)),
+      trialStartedAt: sp.getString(_kTrialStart),
       ahora: ahora ?? DateTime.now(),
     );
   }
 
-  /// Estado de la instalación para un rubro. Una licencia activa nunca
-  /// caduca; si no, la prueba dura [trialDays] desde el primer arranque de
-  /// ese rubro.
+  /// Estado de la instalación. Una licencia activa nunca caduca; si no, la
+  /// prueba dura [trialDays] desde el primer arranque de la app.
   static LicenciaEstado calcularEstado({
     required bool licenciado,
     String? trialStartedAt,

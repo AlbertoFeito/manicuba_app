@@ -44,19 +44,21 @@
   <body>
     <h1 id="titulo">🧭 Generador de licencias · Multiservicios</h1>
     <p class="muted">
-      Herramienta <b>offline</b> para el vendedor. Multiservicios es una sola app
-      con varios rubros (Manicura, Peluquería, Spa...); cada rubro es un
-      producto con su propia licencia. Elige el <b>rubro</b>, introduce el
-      <b>secreto</b> (el mismo con el que se compiló el APK — es uno solo
-      para toda la app) y el <b>código de equipo</b> que te envía la
-      clienta. No compartas esta página ni el secreto.
+      Herramienta <b>offline</b> para el vendedor. Multiservicios usa una
+      <b>única licencia por equipo</b>: el <b>plan</b> que elijas aquí es el
+      que determina cuántos servicios (Manicura, Peluquería, Spa...) podrá
+      tener habilitados esa clienta a la vez, no cuál de ellos. Elige el
+      <b>plan</b>, introduce el <b>secreto</b> (el mismo con el que se
+      compiló el APK — es uno solo para toda la app) y el <b>código de
+      equipo</b> que te envía la clienta. No compartas esta página ni el
+      secreto.
     </p>
 
-    <label for="rubro">Tipo de negocio (rubro a licenciar)</label>
-    <select id="rubro">
-      <option value="manicura">💅 Manicura</option>
-      <option value="peluqueria">💇 Peluquería</option>
-      <option value="spa">🧖 Spa / Estética</option>
+    <label for="plan">Plan contratado</label>
+    <select id="plan">
+      <option value="basico">🥉 Básico — 1 servicio</option>
+      <option value="pro">🥈 Pro — 2 servicios</option>
+      <option value="premium">🥇 Premium — todos los servicios</option>
     </select>
 
     <label for="secret">Secreto de producción de Multiservicios</label>
@@ -80,18 +82,19 @@
         <button id="copyMsg">Copiar mensaje</button>
       </div>
       <div class="warn" id="warn"></div>
-      <div class="warn" id="warnRubro" style="color:#e65100"></div>
+      <div class="warn" id="warnPlan" style="color:#e65100"></div>
     </div>
 
     <script>
       // Una sola app (Multiservicios), un solo secreto de compilación. Lo que
-      // hace que una licencia sirva solo para "Manicura" y no para "Spa" en
-      // el mismo equipo es que el rubro entra en el mensaje firmado
-      // ('app:v1:<rubro>:<deviceId>') — ver lib/services/licencia_service.dart.
-      const RUBROS = {
-        manicura:   { nombre: 'Manicura',        emoji: '💅', color: '#e91e63' },
-        peluqueria: { nombre: 'Peluquería',      emoji: '💇', color: '#6a1b9a' },
-        spa:        { nombre: 'Spa / Estética',  emoji: '🧖', color: '#00897b' },
+      // hace que una licencia sea de un plan u otro es que el plan entra en
+      // el mensaje firmado ('app:v2:plan:<plan>:<deviceId>') — ver
+      // lib/services/licencia_service.dart. El plan NO fija qué rubro se
+      // activa, solo cuántos puede tener habilitados el dispositivo a la vez.
+      const PLANES = {
+        basico:  { nombre: 'Básico',  emoji: '🥉', color: '#3949ab', cupo: '1 servicio' },
+        pro:     { nombre: 'Pro',     emoji: '🥈', color: '#00897b', cupo: '2 servicios' },
+        premium: { nombre: 'Premium', emoji: '🥇', color: '#c2185b', cupo: 'todos los servicios' },
       };
       const DEV_SECRET = 'multiservicios-dev-secret';
 
@@ -119,14 +122,14 @@
       function group(code, size) {
         return (code.match(new RegExp(`.{1,${size}}`, 'g')) || []).join('-');
       }
-      async function computeLicence(deviceId, secret, rubro) {
+      async function computeLicence(deviceId, secret, plan) {
         const enc = new TextEncoder();
         const key = await crypto.subtle.importKey(
           'raw', enc.encode(secret),
           { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
         );
         const sig = await crypto.subtle.sign(
-          'HMAC', key, enc.encode(`app:v1:${rubro}:${normalizeCode(deviceId)}`),
+          'HMAC', key, enc.encode(`app:v2:plan:${plan}:${normalizeCode(deviceId)}`),
         );
         return toBase32(new Uint8Array(sig), LICENCE_CHARS);
       }
@@ -170,19 +173,19 @@
       let ultimaLic = '';
       let ultimoMensaje = '';
 
-      function rubroActual() { return RUBROS[$('rubro').value]; }
+      function planActual() { return PLANES[$('plan').value]; }
 
-      function aplicarRubro() {
-        const r = rubroActual();
-        document.documentElement.style.setProperty('--acento', r.color);
-        $('titulo').textContent = `${r.emoji} Generador de licencias · Multiservicios ${r.nombre}`;
+      function aplicarPlan() {
+        const p = planActual();
+        document.documentElement.style.setProperty('--acento', p.color);
+        $('titulo').textContent = `${p.emoji} Generador de licencias · Multiservicios ${p.nombre}`;
       }
-      $('rubro').addEventListener('change', aplicarRubro);
-      aplicarRubro();
+      $('plan').addEventListener('change', aplicarPlan);
+      aplicarPlan();
 
       $('gen').addEventListener('click', async () => {
-        const r = rubroActual();
-        const rubroKey = $('rubro').value;
+        const p = planActual();
+        const planKey = $('plan').value;
         const secret = $('secret').value.trim();
         const device = normalizeCode($('device').value);
         const cliente = $('cliente').value.trim();
@@ -190,27 +193,28 @@
           alert('Escribe el secreto y el código de equipo.');
           return;
         }
-        const lic = await computeLicence(device, secret, rubroKey);
+        const lic = await computeLicence(device, secret, planKey);
         const eq = group(device, 5);
         const licFmt = group(lic, 4);
 
         ultimaLic = licFmt;
         ultimoMensaje =
-          `Multiservicios ${r.nombre} ${r.emoji} — Licencia\n` +
+          `Multiservicios — Plan ${p.nombre} ${p.emoji}\n` +
           (cliente ? `Cliente: ${cliente}\n` : '') +
           `Equipo: ${eq}\n` +
           `Licencia: ${licFmt}`;
 
-        $('appline').textContent = `Multiservicios ${r.nombre} ${r.emoji} — Licencia`;
+        $('appline').textContent = `Multiservicios — Plan ${p.nombre} ${p.emoji}`;
         $('clienteline').textContent = cliente ? `Cliente: ${cliente}` : '';
         $('clienteline').style.display = cliente ? 'block' : 'none';
         $('eq').textContent = eq;
         $('lic').textContent = licFmt;
         $('warn').textContent = secret === DEV_SECRET
           ? 'AVISO: es el secreto de desarrollo, no sirve para vender.' : '';
-        $('warnRubro').textContent =
-          `Recuerda: esta licencia solo activa "${r.nombre}" en este equipo. ` +
-          `Si la clienta cambia de rubro más adelante, necesita una licencia nueva (y un pago nuevo).`;
+        $('warnPlan').textContent =
+          `Esta licencia desbloquea toda la app y permite tener ${p.cupo} ` +
+          `habilitado(s) a la vez en este equipo. La clienta elige libremente ` +
+          `cuáles, dentro de ese cupo, desde "Gestionar mis servicios".`;
         $('out').classList.add('show');
       });
 

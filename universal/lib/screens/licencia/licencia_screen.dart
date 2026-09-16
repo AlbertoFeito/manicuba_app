@@ -26,6 +26,7 @@ class _LicenciaScreenState extends State<LicenciaScreen> {
 
   String _deviceId = '';
   LicenciaEstado? _estado;
+  PlanLicencia? _plan;
   bool _cargando = true;
   bool _activando = false;
   String? _error;
@@ -45,12 +46,14 @@ class _LicenciaScreenState extends State<LicenciaScreen> {
   Future<void> _cargar() async {
     final id = await _lic.deviceId();
     final est = await _lic.estado();
+    final plan = await _lic.planActivo();
     if (!mounted) {
       return;
     }
     setState(() {
       _deviceId = id;
       _estado = est;
+      _plan = plan;
       _cargando = false;
     });
   }
@@ -120,6 +123,10 @@ class _LicenciaScreenState extends State<LicenciaScreen> {
                 padding: const EdgeInsets.all(20),
                 children: [
                   _buildEstado(),
+                  if (activa && _plan != null) ...[
+                    const SizedBox(height: 16),
+                    _buildPlanActivo(_plan!),
+                  ],
                   const SizedBox(height: 24),
                   if (!activa) ...[
                     _buildCodigoEquipo(),
@@ -182,6 +189,38 @@ class _LicenciaScreenState extends State<LicenciaScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(detalle),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlanActivo(PlanLicencia plan) {
+    final cupo = plan.maxServicios;
+    final detalle = plan == PlanLicencia.premium
+        ? 'Acceso libre a todos los servicios (manicura, peluquería y spa).'
+        : 'Puedes tener hasta $cupo servicio${cupo == 1 ? '' : 's'} '
+            'habilitado${cupo == 1 ? '' : 's'} a la vez en este equipo.';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium, color: AppTheme.successColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Plan ${plan.label}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(detalle, style: const TextStyle(color: AppTheme.textSecondary)),
                 ],
               ),
             ),

@@ -2,34 +2,39 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:multiservicios_app/config/business_config.dart';
 import 'package:multiservicios_app/services/licencia_service.dart';
 
 void main() {
   const secret = 'secreto-de-prueba';
-  const tipo = BusinessType.manicura;
+  const plan = PlanLicencia.basico;
 
   test('La licencia calculada verifica para su dispositivo', () {
     const device = '7K3M92QXBD';
-    final lic = LicenciaService.computeLicence(device, secret, tipo);
-    expect(LicenciaService.verifyLicence(device, lic, secret, tipo), isTrue);
+    final lic = LicenciaService.computeLicence(device, secret, plan);
+    expect(LicenciaService.verifyLicence(device, lic, secret, plan), isTrue);
     // Un código incorrecto no valida.
     expect(
         LicenciaService.verifyLicence(
-            device, 'AAAA1111BBBB2222', secret, tipo),
+            device, 'AAAA1111BBBB2222', secret, plan),
         isFalse);
     // El mismo código con secreto distinto tampoco.
-    expect(LicenciaService.verifyLicence(device, lic, 'otro-secreto', tipo),
+    expect(LicenciaService.verifyLicence(device, lic, 'otro-secreto', plan),
         isFalse);
   });
 
-  test('La misma licencia no verifica para otro rubro', () {
+  test('La misma licencia no verifica para otro plan', () {
     const device = '7K3M92QXBD';
-    final lic = LicenciaService.computeLicence(device, secret, tipo);
+    final lic = LicenciaService.computeLicence(device, secret, plan);
     expect(
         LicenciaService.verifyLicence(
-            device, lic, secret, BusinessType.spa),
+            device, lic, secret, PlanLicencia.premium),
         isFalse);
+  });
+
+  test('Cada plan define su cupo de servicios', () {
+    expect(PlanLicencia.basico.maxServicios, 1);
+    expect(PlanLicencia.pro.maxServicios, 2);
+    expect(PlanLicencia.premium.maxServicios, 3);
   });
 
   test('normalizeCode corrige I/L/O y quita formato', () {

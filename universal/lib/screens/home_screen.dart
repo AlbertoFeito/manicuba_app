@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: 'cambiar_rubro',
                 child: ListTile(
                   leading: Icon(Icons.storefront),
-                  title: Text('Cambiar tipo de negocio'),
+                  title: Text('Gestionar mis servicios'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

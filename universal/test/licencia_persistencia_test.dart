@@ -3,11 +3,12 @@
 //
 // Las pruebas de la lógica pura (computeLicence/verify/calcularEstado) están
 // en licencia_test.dart; aquí se cubre init/deviceId/activar/estaLicenciado/
-// estado, que leen y escriben en almacenamiento.
+// estado/rubrosHabilitados, que leen y escriben en almacenamiento.
 //
 // Los tests comparten el singleton LicenciaService.instance y corren en orden
-// de declaración: primero los que asumen "sin licencia", y al final la
-// activación (que deja el estado como licenciado).
+// de declaración: primero los que asumen "sin licencia" (prueba gratis, con
+// acceso libre a todos los rubros), y al final la activación de un plan
+// (que deja el estado como licenciado y aplica el cupo de servicios).
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,10 +18,6 @@ import 'package:multiservicios_app/services/licencia_service.dart';
 // Debe coincidir con el defaultValue de _secret cuando no se compila con
 // --dart-define=LICENSE_SECRET (el caso de los tests).
 const _secretoDev = 'multiservicios-dev-secret';
-
-// AppConfig.instance.current empieza en "manicura" por defecto (ver
-// business_config.dart) hasta que algo llame a setBusinessType.
-const _tipo = BusinessType.manicura;
 
 void main() {
   final servicio = LicenciaService.instance;
@@ -43,26 +40,70 @@ void main() {
     expect(id1.length, 10);
   });
 
+  test('Sin licencia, empieza sin ningún rubro habilitado', () async {
+    expect(await servicio.rubrosHabilitados(), isEmpty);
+    expect(await servicio.planActivo(), isNull);
+  });
+
+  test('Durante la prueba gratis, cualquier rubro se puede habilitar',
+      () async {
+    for (final tipo in BusinessType.values) {
+      expect(await servicio.puedeHabilitar(tipo), isTrue);
+    }
+  });
+
+  test('habilitarRubro agrega al conjunto sin duplicar', () async {
+    await servicio.habilitarRubro(BusinessType.manicura);
+    await servicio.habilitarRubro(BusinessType.spa);
+    await servicio.habilitarRubro(BusinessType.manicura); // repetido
+
+    final habilitados = await servicio.rubrosHabilitados();
+    expect(habilitados, {BusinessType.manicura, BusinessType.spa});
+  });
+
   test('activar rechaza un código inválido y no licencia', () async {
     final ok = await servicio.activar('CODIGO-INVALIDO-0000');
     expect(ok, isFalse);
     expect(await servicio.estaLicenciado(), isFalse);
+    expect(await servicio.planActivo(), isNull);
 
     // Sin licencia, el estado no es "activa".
     final estado = await servicio.estado();
     expect(estado.tipo, isNot(LicenciaTipo.activa));
   });
 
-  test('activar acepta el código correcto y queda licenciado', () async {
+  test(
+      'activar con un código de plan Básico aplica el cupo de 1 servicio '
+      'y conserva el rubro preferido', () async {
     final id = await servicio.deviceId();
-    final codigo = LicenciaService.computeLicence(id, _secretoDev, _tipo);
+    final codigo = LicenciaService.computeLicence(
+      id,
+      _secretoDev,
+      PlanLicencia.basico,
+    );
 
-    final ok = await servicio.activar(codigo);
+    // Antes de activar, la prueba habilitó "manicura" y "spa" (2 rubros).
+    expect(await servicio.rubrosHabilitados(), hasLength(2));
+
+    final ok = await servicio.activar(
+      codigo,
+      rubroPreferido: BusinessType.spa,
+    );
     expect(ok, isTrue);
     expect(await servicio.estaLicenciado(), isTrue);
+    expect(await servicio.planActivo(), PlanLicencia.basico);
 
     // Ya licenciado, el estado es activa (leído desde persistencia).
     final estado = await servicio.estado();
     expect(estado.tipo, LicenciaTipo.activa);
+
+    // El plan Básico solo permite 1: se conservó el preferido y se soltó
+    // el resto.
+    expect(await servicio.rubrosHabilitados(), {BusinessType.spa});
+
+    // Ya no hay cupo para habilitar un rubro nuevo, pero el que ya está
+    // habilitado se puede seguir usando.
+    expect(await servicio.puedeHabilitar(BusinessType.spa), isTrue);
+    expect(await servicio.puedeHabilitar(BusinessType.peluqueria), isFalse);
   });
 }

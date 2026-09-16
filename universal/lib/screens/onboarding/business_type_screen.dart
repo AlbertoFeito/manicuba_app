@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/business_config.dart';
 import '../../config/theme.dart';
@@ -10,17 +11,19 @@ import '../../services/licencia_service.dart';
 /// Selector de tipo de negocio. Se usa en dos momentos:
 /// - Primera pantalla que ve una instalación nueva (`esCambio: false`,
 ///   valor por defecto), antes de elegir ningún rubro.
-/// - Desde el menú de Inicio, para cambiar de rubro más adelante
-///   (`esCambio: true`).
+/// - Desde el menú de Inicio, para gestionar los rubros habilitados más
+///   adelante (`esCambio: true`).
 ///
-/// En ambos casos, la elección define colores, textos y catálogo de
-/// servicios sugerido para el resto de la app, y qué licencia/prueba aplica
-/// (cada rubro tiene la suya, ver [LicenciaService]). Cada rubro tiene
-/// además su propia base de datos (ver [DatabaseHelper.dbName]): clientes,
-/// citas, servicios y finanzas de "Manicura" son completamente
-/// independientes de los de "Spa", como si fueran negocios separados. Si el
-/// rubro elegido no tiene licencia activa todavía, arranca su propia prueba
-/// de 15 días.
+/// La elección define colores, textos y catálogo de servicios sugerido
+/// para el resto de la app. Cada rubro tiene además su propia base de datos
+/// (ver [DatabaseHelper.dbName]): clientes, citas, servicios y finanzas de
+/// "Manicura" son completamente independientes de los de "Spa", como si
+/// fueran negocios separados.
+///
+/// La licencia es única por dispositivo ([LicenciaService]), pero el plan
+/// contratado limita cuántos rubros pueden estar habilitados a la vez
+/// (Básico: 1, Pro: 2, Premium: todos). Durante la prueba gratis de 15 días
+/// el acceso es libre a los 3, para poder evaluarlos antes de pagar.
 class BusinessTypeScreen extends StatefulWidget {
   const BusinessTypeScreen({super.key, this.esCambio = false});
 
@@ -31,7 +34,39 @@ class BusinessTypeScreen extends StatefulWidget {
 }
 
 class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
-  bool _guardando = false;
+  final _lic = LicenciaService.instance;
+
+  bool _guardando = true;
+  Set<BusinessType> _habilitados = {};
+  PlanLicencia? _plan;
+  // Si hay cupo libre para habilitar un rubro más (además de los que ya
+  // están en [_habilitados]). Es el mismo valor para cualquier rubro
+  // pendiente: no depende de cuál sea, solo de cuántos caben en el plan.
+  bool _hayCupoParaMas = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEstadoLicencia();
+  }
+
+  Future<void> _cargarEstadoLicencia() async {
+    await _lic.init();
+    final habilitados = await _lic.rubrosHabilitados();
+    final plan = await _lic.planActivo();
+    var hayCupo = true;
+    final pendientes = BusinessType.values.where((t) => !habilitados.contains(t));
+    if (pendientes.isNotEmpty) {
+      hayCupo = await _lic.puedeHabilitar(pendientes.first);
+    }
+    if (!mounted) return;
+    setState(() {
+      _habilitados = habilitados;
+      _plan = plan;
+      _hayCupoParaMas = hayCupo;
+      _guardando = false;
+    });
+  }
 
   Future<void> _elegir(BusinessType tipo) async {
     if (_guardando) return;
@@ -40,6 +75,15 @@ class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
       // Ya es el rubro activo: no hace falta reiniciar nada.
       if (mounted) Navigator.of(context).pop();
       return;
+    }
+
+    if (!_habilitados.contains(tipo)) {
+      final puede = await _lic.puedeHabilitar(tipo);
+      if (!puede) {
+        if (mounted) await _mostrarLimitePlan();
+        return;
+      }
+      await _lic.habilitarRubro(tipo);
     }
 
     setState(() => _guardando = true);
@@ -57,9 +101,6 @@ class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConfig.prefsKey, tipo.name);
 
-    // Arranca (o continúa) la prueba/licencia de este rubro específico.
-    await LicenciaService.instance.init();
-
     if (!mounted) return;
     // Reconstruye toda la app desde cero: sirve tanto para pasar del
     // onboarding a Inicio como para aplicar un cambio de rubro hecho desde
@@ -67,12 +108,54 @@ class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
     Restarter.reiniciar(context);
   }
 
+  Future<void> _mostrarLimitePlan() async {
+    final planLabel = _plan?.label ?? 'actual';
+    final cupo = _plan?.maxServicios;
+    final detalle = _plan == null
+        ? 'Tu prueba gratis ya venció. Activa una licencia para seguir '
+            'usando la app.'
+        : 'Tu plan $planLabel permite hasta $cupo servicio'
+            '${cupo == 1 ? '' : 's'} habilitado${cupo == 1 ? '' : 's'} a la '
+            'vez. Para agregar este también, mejora de plan.';
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Límite de tu plan'),
+        content: Text(detalle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendido'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _contactarWhatsApp();
+            },
+            icon: const Icon(Icons.chat),
+            label: const Text('Hablar por WhatsApp'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _contactarWhatsApp() async {
+    final mensaje = Uri.encodeComponent(
+      'Hola, quiero mejorar mi plan de Multiservicios para habilitar más '
+      'servicios.',
+    );
+    final uri = Uri.parse('https://wa.me/5353498305?text=$mensaje');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: widget.esCambio
-          ? AppBar(title: const Text('Cambiar tipo de negocio'))
+          ? AppBar(title: const Text('Gestionar mis servicios'))
           : null,
       body: SafeArea(
         child: _guardando
@@ -94,11 +177,12 @@ class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
                     Text(
                       widget.esCambio
                           ? 'Tus clientes, citas y finanzas no se pierden al '
-                              'cambiar de rubro. Si eliges uno que no habías '
-                              'usado antes, empieza su propia prueba de 15 días.'
+                              'cambiar de servicio. Cuántos puedes tener '
+                              'habilitados a la vez depende de tu plan.'
                           : 'Elige tu rubro para personalizar la app: colores, '
                               'servicios sugeridos y contenido para redes '
-                              'sociales.',
+                              'sociales. Tienes 15 días de prueba con acceso '
+                              'libre a todos.',
                       style: const TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 32),
@@ -109,6 +193,8 @@ class _BusinessTypeScreenState extends State<BusinessTypeScreen> {
                                   config: kBusinessConfigs[tipo]!,
                                   activo: widget.esCambio &&
                                       tipo == AppConfig.instance.current.tipo,
+                                  disponible: _habilitados.contains(tipo) ||
+                                      _hayCupoParaMas,
                                   onTap: () => _elegir(tipo),
                                 ))
                             .toList(),
@@ -127,11 +213,13 @@ class _TarjetaNegocio extends StatelessWidget {
     required this.config,
     required this.onTap,
     this.activo = false,
+    this.disponible = true,
   });
 
   final BusinessConfig config;
   final VoidCallback onTap;
   final bool activo;
+  final bool disponible;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +258,7 @@ class _TarjetaNegocio extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      activo ? 'Rubro actual' : config.subtitulo,
+                      _subtitulo,
                       style: TextStyle(
                         color: activo ? config.primaryColor : Colors.grey,
                         fontWeight: activo ? FontWeight.w600 : FontWeight.normal,
@@ -180,11 +268,20 @@ class _TarjetaNegocio extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: config.primaryColor),
+              Icon(
+                disponible ? Icons.chevron_right : Icons.lock_outline,
+                color: disponible ? config.primaryColor : Colors.grey,
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String get _subtitulo {
+    if (activo) return 'Servicio actual';
+    if (!disponible) return 'Requiere mejorar de plan';
+    return config.subtitulo;
   }
 }
